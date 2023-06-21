@@ -1,0 +1,230 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.myCanvas{
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position:center center;
+    background-color: black;
+}
+
+#image {
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position:center center;
+}
+
+#gif {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+
+/* 隐藏输入框 */
+#container {
+    display: none;
+    position: absolute;
+}
+
+.inputBar{
+    height: 45px;
+    width: 500px;
+    font-size: 28px;
+}
+
+.nextBtn{
+    cursor: pointer;
+    border:1px solid #982f13;
+    border-radius: 3px;
+    height: 56px;
+    width: 100px;
+    font-size: 28px;
+    font-weight: 600;
+    color: white;
+    margin-left: -115px;
+    background-color: #982f13;
+}
+
+/* 将完成图标放在输入框的右上角 */
+#container img {
+    position: absolute;
+    height: 30px;
+    margin-left: -30px;
+    cursor: pointer;
+}
+
+/* 隐藏二维码 */
+#qrcode {
+    display: none;
+    position: fixed;
+    top: 70%;
+    left: 75%;
+}
+
+#clearbtn{
+    display: none;
+    position: fixed;
+    /* height: canvasH/12; */
+    /* width:canvasW/11; */
+    /* bottom: canvasH/13; */
+    /* right:canvasW/12; */
+}
+
+#selectbtn{
+    display: none;
+    position: fixed;
+    /* height: canvasH/12; */
+    /* width:canvasW/11; */
+    /* bottom: canvasH/13; */
+    /* right:canvasW/8; */
+}
+
+#dwnbtn{
+    display: none;
+    position: fixed;
+    /* height: canvasH/12; */
+    /* width:canvasW/11; */
+    /* bottom: canvasH/13; */
+    /* right:canvasW/12; */
+}
+
+
+.bbtn{
+    cursor: pointer;
+    border:1px solid #982f13;
+    border-radius: 20px;
+    font-size: 24px;
+    font-weight: 600;
+    color: white;
+    background-color: #982f13;
+}
+
+#backDrawCSS {
+    cursor: pointer;
+    display: none;
+    position: absolute;
+    top:20px;
+    left:70px;
+    width: 80px;   /*设置宽度为icon长度，直接让文字换行*/
+    text-align: center;
+    font-weight: 700;
+}
+
+#reRenderCSS {
+    cursor: pointer;
+    display: none;
+    position: absolute;
+    top:20px;
+    left:70px; 
+    width: 100px;   /*设置宽度为icon长度，直接让文字换行*/
+    text-align: center;
+    font-weight: 700;
+}
+
+#backInputCSS {
+    cursor: pointer;
+    display: none;
+    position: absolute;
+    top:20px;
+    /* left:70px; */
+    width: 150px;   /*设置宽度为icon长度，直接让文字换行*/
+    text-align: center;
+    font-weight: 700;
+}
+
+
+#returnHomeCSS{
+    cursor: pointer;
+    display: none;
+    position: absolute;
+    top:20px;
+    left: 70px;
+    width: 80px;   /*设置宽度为icon长度，直接让文字换行*/
+    text-align: center;
+    font-weight: 700;
+}
+
+#returnDrawCSS {
+    cursor: pointer;
+    display: none;
+    position: absolute;
+    top:20px;
+    left:200px;
+    width: 80px;   /*设置宽度为icon长度，直接让文字换行*/
+    text-align: center;
+    font-weight: 700;
+}
+
+.backDrawImg{
+    height: 80px;
+}
+
+.backInputImg{
+    height: 80px;
+}
+
+.reRenderImg{
+    height: 80px;
+}
+
+.returnHomeImg{
+    height: 80px;
+}
+
+.returnDrawImg{
+    height: 80px;
+}
+
+.backDrawP{
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.backInputP{
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.reRenderP{
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.returnHomeP{
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.returnDrawP{
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+
