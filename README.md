@@ -4,6 +4,8 @@
 
 * 当前网址：http://scroll.ihanzi.net/
 
+* 文件中引用的svgs-still文件夹来自仓库：[make me a hanzi](https://github.com/skishore/makemeahanzi)
+
 ## 1.0版本
 前端：锦绣花园、面包脑袋、小玮狂炫香菜
 
