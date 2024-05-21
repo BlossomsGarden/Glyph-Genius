@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- 本项目最大的坑：ctx.translate是可叠加的 -->
+<!-- 虽然HTMLjs不能修改、保存文件，但是我可以把修改后的数据存入img.src中，然后就能更新数据并一直保有了鸭 -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>辞海古卷</title>
+    <link href="/dev.css" rel="stylesheet" type="text/css" />
+    <!-- ttf文件及生成的png图片存放在canvasScroll/ttf/文件夹下 -->
+    <style>
+        @font-face {
+            font-family: 甲骨文;
+            src: url(./ttf/fangzheng-jiaguwen.TTF);
+        }
+
+        @font-face {
+            font-family: 金文大篆;
+            src: url(./ttf/fangzheng-jinwendazhuan.TTF);
+        }
+
+        @font-face {
+            font-family: 隶书;
+            src: url(./ttf/fangzheng-liqibeilishu.TTF);
+        }
+
+        @font-face {
+            font-family: 小篆;
+            src: url(./ttf/fangzheng-xiaozhuan.TTF);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="image"></div>
+    <div id="gif"></div>
+    <div id="overlay"></div>
+
+    <span id="backWriteCSS">
+        <img src="rewrite.svg" class="backWriteImg" onclick="backWrite()" />
+        <span class="backWriteP">重写</span>
+    </span>
+    <span id="reRenderCSS">
+        <img src="regenerate.svg" class="reRenderImg" onclick="reRender()" />
+        <span class="reRenderP">重新生成</span>
+    </span>
+    <span id="backInputCSS">
+        <img src="reinput_label.svg" class="backInputImg" onclick="backInput()" />
+        <span class="backInputP">重新输入标签</span>
+    </span>
+    <span id="returnHomeCSS">
+        <img src="home.svg" class="returnHomeImg" onclick="returnHome()" />
+        <span class="returnHomeP">首页</span>
+    </span>
+    <span id="returnPreviousCSS">
+        <img src="returnPrevious.svg" class="returnPreviousImg" onclick="returnPrevious()" />
+        <span class="returnPreviousP">返回</span>
+    </span>
+
+    <canvas width="1600" height="1200" class="myCanvas" id="canvas"></canvas>
+    <button id="clearbtn" class="bbtn" onclick="clearDraw()">清除</button>
+    <button id="selectbtn" class="bbtn" onclick="slectedOver()">选择完毕</button>
+    <button id="dwnbtn" class="bbtn" onclick="download()">下载</button>
+
+    <!-- 隐藏的输入框，等待显示 -->
+    <div id="container">
+        <input class="inputRenderLabelBar" type="text" placeholder="例如[丝]，可输入：飘扬的丝带" />
+        <button alt="" class="inputRenderLabelBtn" onclick="hideInput()">下一步</button>
+    </div>
+    <div class="wrap">
+        <div class="word-info">
+            <div class="word-font" id="word-font"></div>
+            <div class="word-bj" id="spell">
+                读音：
+            </div>
+            <div class="word-bj" id="jiegou">
+                部件组成：
+            </div>
+            <div class="word-hy" id="en_hanyi">
+                现代涵义：1：国都；首都。2：北京的简称。3：姓
+            </div>
+            <div class="word-swjz" id="description">
+                《说文解字》：人所爲絕高丘也。从高省，丨 象高形。凡京之屬皆从京。 舉卿切 。
+            </div>
+        </div>
+    </div>
+    <div id="qrcode"></div>
+
+    <!-- 隐藏的加载弹窗，等待显示 -->
+    <div id="modal" class="modal hidden">
+        <p>正在渲染中，请稍后...</p>
+        <p style="padding: 0px 66px;">已渲染（<span id="count">0</span> / 6）张图片，至少渲染完一张图片后，您可点击取消渲染</p>
+        <button id="cancel" class="cancelbtn">取消</button>
+    </div>
+
+</body>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="./qrcode.js"></script>
+
+<!-- 欢迎页部分 -->
+<script>
+    var phase = 0;
+    var canvasW = 1200;
+    var canvasH = 600;
+
+    //检查cookie
+    var userCookie=checkUserIdCookie();
+    console.log(userCookie);
+
+    //设置axios请求公共头
+    axios.defaults.baseURL = 'http://139.196.197.42:9090'
+    // axios.defaults.baseURL = 'http://127.0.0.1:9090'
+
+    // 页面加载完成后执行操作
+    window.onload = function () {
+        phase = 0
+        //展示军火
+        showWelcomeElement()
+        document.body.addEventListener("click", showGif);
+        
+    };
+
+    //生成随机用户ID
+    function generateUserId(){
+        return Math.random().toString(36).substring(2,15);
+    }
+
+    //设置cookie
+    function setCookie(name,value,days){
+        var expires="",path="; path=/",site="; SameSite=None",secure="; Secure";
+        if(days){
+            var date=new Date();
+            date.setTime(date.getTime()+(days*24*60*60*1000));
+            expires="; expires="+date.toUTCString();
+        }
+        document.cookie=name+"="+value+expires+path+site+secure;
+    }
+
+    //获取cookie
+    function getCookie(name){
+        var nameEQ=name+"=";
+        var cookies =document.cookie.split(";");
+        for(var i=0;i<cookies.length;++i){
+            var cookie=cookies[i];
+            while(cookie.charAt(0)===' ')
+                cookie=cookie.substring(1,cookie.length);
+            if(cookie.split('=')[0]===name)
+                return cookie.substring(nameEQ.length,cookie.length);
+        }
+        return "";
+    }
+
+    // 检查用户是否已有cookie，若无则新建一个
+    function checkUserIdCookie(){
+        var userId=getCookie("userId");
+        // console.log("checkUserIdCookie",userId);
+        if(userId===""){
+            userId=generateUserId();
+            setCookie("userId",userId,30);
+        }
+        return userId;
+    }
+
+
+
+    // 显示GIF
+    function showGif() {
+        var gifDiv = document.getElementById("gif");
+        var gifImg = document.createElement("img");
+        gifImg.src = "welcome.gif";
+        gifImg.alt = "GIF animation";
+        gifImg.style.width = "100%";
+        gifImg.style.height = "100%";
+        gifDiv.innerHTML = "";
+        gifDiv.appendChild(gifImg);
+        gifDiv.style.display = "block";
+
+        //更新画布长宽为铺满屏幕
+        // 获取当前屏幕宽高
+        var screenWidth = window.innerWidth;
+        var screenHeight = window.innerHeight;
+
+        // 获取canvas元素
+        var canvas = document.getElementById("canvas");
+        // 更新canvas元素的宽高
+        canvas.width = screenWidth;
+        canvas.height = screenHeight;
+
+        const canvas_content = canvas.getBoundingClientRect()//获取画布的大小
+        canvasW = canvas_content.width
+        canvasH = canvas_content.height
+        console.log("此处获取到了canvasW、canvasH：" + canvasW + "、" + canvasH)
+        canvasH_W = canvasH / canvasW
+        // 停止GIF播放
+        setTimeout(function () {
+            coverWelcomeElement()
+            console.log("执行完毕后自动删除自己")
+            //避免后面的phase中会突然来一个开屏页，或者最后一页点击“首页”回来时自动展示动画
+            document.body.removeEventListener("click", showGif)
+            console.log("打印一下translate的左标现在是什么", PO)
+            writeOnload()
+            
+        }, 4500); // 4.5秒后停止播放
+    }
+
+    function showWelcomeElement() {
+        console.log("设置全屏居中欢迎页图片")
+        var imageDiv = document.getElementById("image");
+        imageDiv.style.backgroundImage = "url('initial.jpg')";
+        imageDiv.style.display = "block";
+    }
+
+    function coverWelcomeElement() {
+        var imageDiv = document.getElementById("image");
+        imageDiv.style.display = "none";
+        var gifDiv = document.getElementById("gif");
+        gifDiv.style.display = "none"
+    }
+
+    //检查phase以设置canvas背景
+    function checkPhase() {
+        switch (phase) {
+            case 1:
+                canvas.style.backgroundImage = 'url(' + "'./bk-img/bk1.png'" + ')';
+                var clearbtn = document.getElementById('clearbtn');
+                clearbtn.style.right = canvasW / 10 + 'px';
+                clearbtn.style.bottom = canvasH / 13 + 'px';
+                clearbtn.style.width = canvasW / 11 + 'px';
+                clearbtn.style.height = canvasH / 12 + "px";
+                clearbtn.style.display = "block";
+                break;
+            case 2:
+                canvas.style.backgroundImage = 'url(' + "'./bk-img/bk2.png'" + ')';
+                //不显示“清除”按钮
+                var clearbtn = document.getElementById('clearbtn');
+                clearbtn.style.display = "none";
+                //显示“选择完毕”按钮
+                var selectbtn = document.getElementById('selectbtn');
+                selectbtn.style.right = canvasW / 10 + 'px';
+                selectbtn.style.bottom = canvasH / 13 + 'px';
+                selectbtn.style.width = canvasW / 8 + 'px';
+                selectbtn.style.height = canvasH / 12 + "px";
+                selectbtn.style.display = "block";
+                //显示“重写”按钮
+                var backWriteCSS = document.getElementById('backWriteCSS')
+                backWriteCSS.style.display = "block"
+                break;
+            case 3:
+                canvas.style.backgroundImage = 'url(' + "'./bk-img/bk3.png'" + ')';
+                //不显示“重写”按钮
+                var backWriteCSS = document.getElementById('backWriteCSS')
+                backWriteCSS.style.display = "none"
+                //不显示“选择完毕”按钮
+                var selectbtn = document.getElementById('selectbtn');
+                selectbtn.style.display = "none";
+                break;
+            case 99:
+                canvas.style.backgroundImage = 'url(' + "'./bk-img/bk8.png'" + ')';
+                //不显示“重写”按钮
+                var backWriteCSS = document.getElementById('backWriteCSS')
+                backWriteCSS.style.display = "none"
+                //不显示“选择完毕”按钮
+                var selectbtn = document.getElementById('selectbtn');
+                // selectbtn.style.display = "none";
+                break;
+            case 6:
+                canvas.style.backgroundImage = 'url(' + "'./bk-img/bk6.png'" + ')';
+                //跳转后要将清空输入框的内容，把它隐藏起来
+                const inputBox = document.getElementById("container");
+                inputBox.style.display = "none"
+                inputBox.querySelector("input").value = ""
+                //不显示“下载”按钮
+                var dwnbtn = document.getElementById('dwnbtn');
+                dwnbtn.style.display = "none";
+                //显示“重新生成”按钮
+                var reRenderCSS = document.getElementById('reRenderCSS')
+                reRenderCSS.style.display = "block";
+                //显示“重新输入标签”按钮
+                var backInputCSS = document.getElementById('backInputCSS')
+                backInputCSS.style.left = "220px";
+                backInputCSS.style.display = "block";
+                //不显示“返回”按钮
+                var returnPreviousCSS = document.getElementById('returnPreviousCSS')
+                returnPreviousCSS.style.display = "none";
+                break;
+            case 4:
+                canvas.style.backgroundImage = 'url(' + "'./bk-img/bk4.png'" + ')';
+                //不显示加载中的modal
+                var modal = document.getElementById("modal");
+                modal.classList.add("hidden");
+                //不显示蒙版
+                var overlay = document.getElementById("overlay");
+                overlay.style.backgroundColor = "rgba(0, 0, 0, 0)"
+                overlay.style.display = "none";
+                //不显示“重新输入标签”按钮
+                var backInputCSS = document.getElementById('backInputCSS')
+                backInputCSS.style.display = "none";
+                //显示“下载”按钮
+                var dwnbtn = document.getElementById('dwnbtn');
+                dwnbtn.style.right = canvasW / 10 + 'px';
+                dwnbtn.style.bottom = canvasH / 13 + 'px';
+                dwnbtn.style.width = canvasW / 11 + 'px';
+                dwnbtn.style.height = canvasH / 12 + "px";
+                dwnbtn.style.display = "block";
+                //显示“返回”按钮
+                var returnPreviousCSS = document.getElementById('returnPreviousCSS')
+                returnPreviousCSS.style.display = "block";
+                //新添加
+                //不显示“重新生成”按钮
+                var reRenderCSS = document.getElementById('reRenderCSS')
+                reRenderCSS.style.display = "none";
+                break;
+            case 5:
+                canvas.style.backgroundImage = 'url(' + "'./bk-img/bk7_no_caption.png'" + ')';
+                //不显示“重新生成”按钮
+                var reRenderCSS = document.getElementById('reRenderCSS')
+                reRenderCSS.style.display = "none";
+                //不显示“下载”按钮
+                var dwnbtn = document.getElementById('dwnbtn');
+                dwnbtn.style.display = "none";
+                //不显示“返回”按钮
+                var returnPreviousCSS = document.getElementById('returnPreviousCSS')
+                returnPreviousCSS.style.display = "none";
+                break;
+            default:
+                backgroundImage = '404.png';
+        }
+    }
+</script>
+
+<!-- 手写部分 -->
+<script>
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    var isDraw = false; //定义变量控制画笔是否可用
+    var movePos;         //定义变量存放初始画笔开始位置
+    var drawWidth = 10
+    var drawColor = 'white'
+    var lastButtonDownTime
+    var timeoutId = null;
+    //const cheerio=require('cheerio');
+
+    var PO = { x: 0, y: 0 };
+
+    //清除
+    function clearDraw() {
+        console.log("一律清除")
+        ctx.clearRect(-canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
+    }
+
+    function writeOnload() {
+        phase = 1
+        console.log("进入第一阶段，手写")
+        checkPhase()
+
+        PO = { x: 0, y: 0 };
+        //清空画布
+        clearDraw()
+
+        //清空选择笔画
+        chosenStrokes = []
+
+        //鼠标点下
+        canvas.onmousedown = function (e) {
+            // 阻止默认事件
+            e.preventDefault();
+            // console.log("鼠标按下")
+            isDraw = true;
+            movePos = getPos(e.clientX, e.clientY);
+            // console.log("鼠标按下movePos",movePos)
+            // console.log("鼠标按下isDraw",isDraw)
+            ClickDrawing(e);
+        }
+        //鼠标移动
+        canvas.onmousemove = function (e) {
+            // 阻止默认事件
+            e.preventDefault();
+            // console.log("鼠标移动isDraw",isDraw)
+            ClickDrawing(e);
+        }
+        //鼠标松开
+        canvas.onmouseup = function (e) {
+            // 阻止默认事件
+            e.preventDefault();
+            // console.log("鼠标松开isDraw0",isDraw)
+            isDraw = false;
+            if (phase == 1) {
+                if (timeoutId === null) {
+                    timeoutId = setTimeout(writeOver, 2000);
+                } else {
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(writeOver, 2000);
+                }
+            }
+        }
+        //鼠标离开
+        canvas.onmouseout = function (e) {
+            // console.log("鼠标离开isDraw",isDraw)
+            isDraw = false;
+        }
+        
+
+    }
+
+    //获取鼠标相对与canvas位置
+    function getPos(x, y) {
+        var box = canvas.getBoundingClientRect();
+        return { x: x - box.left, y: y - box.top };
+    };
+
+    //鼠标画笔
+    function ClickDrawing(clickEvent) {
+        if (isDraw) {
+            var position = getPos(clickEvent.clientX, clickEvent.clientY)
+            ctx.fillStyle = drawColor; // 设置填充颜色为白色
+            ctx.beginPath()
+            ctx.arc(position.x, position.y, drawWidth, 0, 2 * Math.PI); // 在指定位置绘制小圆形轨迹
+            ctx.fill()
+            interpolateAndDraw(movePos.x, movePos.y, position.x, position.y)
+            movePos = position;
+            ctx.restore();
+        }
+    }
+
+    //为了避免鼠标移动太快导致小圆点出现断层，gpt帮我写了个插值补色函数，我哭似，我真的哭似
+    //(x1,y1)为起始点，(x2,y2)为目标点
+    function interpolateAndDraw(x1, y1, x2, y2) {
+        var dx = x2 - x1;
+        var dy = y2 - y1;
+        var distance = Math.sqrt(dx * dx + dy * dy);
+
+        //步长超过5即进行插值
+        const step = 5
+        if (distance > step) {
+            var steps = Math.floor(distance / step);
+            var xIncrement = dx / steps;
+            var yIncrement = dy / steps;
+
+            for (var i = 0; i < steps; i++) {
+                var newX = x1 + (xIncrement * i);
+                var newY = y1 + (yIncrement * i);
+                ctx.fillStyle = drawColor; // 设置填充颜色为白色
+                ctx.beginPath()
+                ctx.arc(newX, newY, drawWidth, 0, 2 * Math.PI); // 在指定位置绘制小圆形轨迹
+                ctx.fill()
+            }
+        }
+    }
+
+    
+    //点击选择完毕按钮
+    function showMeaningOnload(chrctData) {
+        console.log("进入第二阶段：选择笔画")
+        phase = 99
+        checkPhase()
+
+        // console.log("重画字的位置，设置原点为(canvasW * 1/3, canvasH * 1/2")
+        ctx.translate(-PO.x, -PO.y)
+        PO = { x: canvasW * 1 / 3, y: canvasH * 12 / 25 }
+        ctx.translate(PO.x, PO.y)
+        imgW = imgW * 0.5
+        imgH = imgH * 0.5
+
+        //清空画布并把新图显示在画布上
+        var modifiedSVG1 = svgDoc_leave.innerHTML;
+        var blob1 = new Blob([modifiedSVG1], { type: "image/svg+xml" });
+        img.src = URL.createObjectURL(blob1);
+        img.onload = () => {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(-canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
+            ctx.drawImage(img, -imgW / 2, -imgH / 2, imgW, imgH);
+        };
+
+        clearDraw()
+        document.getElementById("description").innerText="《说文解字》："+chrctData.description;
+        var jiegouText="部件组成：",spellText="读音：",en_meaningText="英文含义：";
+        var wordType=["甲骨文","金文大篆","小篆","隶书"],wordTypeDes=["甲骨文","金文","小篆","隶书"];
+        var jiegouDiv=document.getElementById("jiegou"),spellDiv=document.getElementById("spell"),en_hanyiDiv=document.getElementById("en_hanyi");
+        jiegouDiv.innerHTML="";
+        jiegouDiv.innerText=jiegouText;
+        spellDiv.innerText=spellText+String(chrctData.spell);
+        en_hanyiDiv.innerText=en_meaningText+String(chrctData.en_meaning);
+        console.log(chrctData.part_all);
+        document.getElementById("word-font").innerHTML="";
+        var wordFontDiv=document.getElementById("word-font");
+        if(wordFontDiv){
+            for(var i=0;i<4;++i){
+                var newDiv=document.createElement("div");
+                newDiv.className="word-font__item";
+                var newSpan1=document.createElement("span"),newSpan2=document.createElement("span");
+                newSpan1.style.fontFamily=wordType[i];
+                newSpan1.textContent=chrctData.word;
+                newSpan2.className="word-font__type";
+                newSpan2.textContent=wordTypeDes[i];
+                newDiv.appendChild(newSpan1);
+                newDiv.appendChild(newSpan2);
+                wordFontDiv.appendChild(newDiv);
+            }
+        }
+        if(chrctData.part_all=="#")
+        {
+            var newSpan=document.createElement("span");
+            newSpan.innerText="\""+chrctData.word+"\"";
+            jiegouDiv.appendChild(newSpan);
+        }
+        else{
+            for(var i=0;i<chrctData.part_all.length;++i){
+            var newSpan=document.createElement("span");
+            newSpan.innerText="\""+chrctData.part_all[i]+"\"";
+            jiegouDiv.appendChild(newSpan);
+            // jiegouText+="  \""+chrctData.part_all[i]+"\"  ";
+        }
+        }
+        
+        // document.getElementById("jiegou").innerText=jiegouText;
+        var oDivWrap = document.querySelector('.wrap');
+        oDivWrap.style.display = 'flex';
+        //oDivWrap.style.left = canvasW * 3130 / 6580 + "px";
+        //oDivWrap.style.top = canvasH * 880 / 4320 + "px";
+    }
+
+
+    //书写完毕
+    async function writeOver() {
+        console.log('2秒钟没有点击，执行writeOver函数');
+        const image = new Image();
+        image.src = canvas.toDataURL('image/png');
+        console.log("待识别base64", image.src)
+        timeoutId = null
+        phase = 2 //为避免两次发送请求，这里马上赋值为2
+        var wordInfo1="",wordInfo2="",wordInfo3="";
+        await axios({
+            method: 'POST',
+            url: '/recognize',
+            data: {
+                "data": image.src,
+            }
+        })
+        
+            .then(async res => {
+                console.log("打印一下识别结果", res)
+                // 识别结果
+                console.log(res.data.ch)
+                if (res.data.code === 512) {
+                    alert("识别到超出一个字，还请您写的紧凑些~")
+                    backWrite()
+                }
+                else if (res.data.code === 511) {
+                    alert("无法正确识别，还请您重新书写~")
+                    backWrite()
+                }
+                else {
+                    isDraw = false
+                    clearDraw()
+                    //请求文字信息
+                    await axios({
+                        method: 'GET',
+                        url: 'https://x-chinese-api.ykt.eduyun.cn/v1/chinese/definitions?word='+String(res.data.ch),
+
+                    })
+                    .then(res2=>{
+                        console.log("请求文字信息1",res2.data)
+                        wordInfo1=res2.data
+                    })
+                    .catch(error2 => {
+                        console.log("请求文字信息1错误",error2.message)
+                    });
+
+                    await axios({
+                        method: 'GET',
+                        url: 'https://x-chinese-api.ykt.eduyun.cn/v1/chinese/words?word='+String(encodeURI(res.data.ch)),
+
+                    })
+                    .then(res3=>{
+                        
+                        console.log("请求文字信息2",res3.data)
+                        wordInfo2=res3.data
+                    })
+                    .catch(error3 => {
+                        console.log("请求文字信息2错误",error3.message)
+                    });
+
+
+                    await axios({
+                        method:'POST',
+                        url:'/meaning',
+                        data:{
+                            "url":"https://ctext.org/dictionary.pl",
+                            "word":res.data.ch,
+                        }
+                    }).then(res4=>{
+                        console.log(res4.data.success)
+                        if(res4.data.success){
+                            console.log("请求文字信息3",res4.data.meaning)
+                            wordInfo3=res4.data.meaning
+                        }
+                        else{
+                            console.log("请求api错误",res4.data.message)
+                        }
+                        
+                    })
+                    .catch(error4=>{
+                        console.log("请求meaning错误",error4.message)
+                    })
+
+
+                    var part_all=wordInfo2.jiegou.part_all,partList=new Array();
+                    for(var i=0;i<part_all.length;++i){
+                        partList.push(part_all[i]);
+                    }
+                    
+
+                    console.log("wordInfo3",wordInfo3)
+
+                    var showInfo={
+                        "word":res.data.ch,
+                        "unicode":res.data.unicode,
+                        "exist":res.data.exist,
+                        "description":wordInfo1.description,
+                        "spell":wordInfo1.spell,
+                        "part_all":partList,
+                        "en_meaning":wordInfo3,
+                        
+                    }
+ 
+                    await showOnload(res.data.unicode, res.data.ch);
+                    await showMeaningOnload(showInfo);
+                }
+            })
+            .catch(res=>{
+                alert('网络错误'); 
+            });
+            
+        // 接口出了点bug，干脆不识别了，直接返回
+        //isDraw=false
+        //clearDraw()
+        //showOnload(14542)
+    }
+</script>
+
+<!-- 选择部分 -->
+<script>
+    var chosenStrokes = [];   //用以记录都选中了笔画的哪几笔
+
+    const PINK = "FFC0CB"
+    const GREY = "808080"
+
+    var svgPath = ''
+
+    var svgDoc_leave = ''
+    var svgDoc_send = ''
+    //设置这个变量是因为最后一页有个“重新输入标签”的按钮，但是这时候svgDoc_leave中已经有笔画被删除了
+    //因此在删除笔画之前先把内容深拷贝一份放在这里避免报错
+    var svgDoc_leave_deepcopy = ''
+
+    var imgH, imgW, beginX, beginY;
+    var rotate = 0;
+    var scale = 1;
+    //这里用改变坐标原点的方式来画图，让坐标原点始终在图片的中心
+
+
+    var initImgW = 400;
+    var initImgH = 400;
+    var img = new Image();
+    var oldInputEng = '';
+    var oldBase64 = '';
+
+    function backWrite() {
+        console.log("从选择笔画返回重写")
+        //不显示“重写”按钮
+        var backWriteCSS = document.getElementById('backWriteCSS')
+        backWriteCSS.style.display = "none"
+        //不显示“选择完毕”按钮
+        var selectbtn = document.getElementById('selectbtn');
+        selectbtn.style.display = "none";
+
+        phase = 1
+        ctx.translate(-PO.x, -PO.y)
+        writeOnload()
+    }
+
+    //window屏幕坐标转化为canvas坐标
+    convertCoordinate = function (x, y) {
+        //在屏幕坐标系中，相对canvas坐标系原点PO的偏移,所以要减去canvas坐标原点
+        x = x - PO.x;
+        y = y - PO.y;
+        return { x: x, y: y }
+    }
+
+    //这个函数在handleClick中调用，作用是：判定这个选中的颜色是粉色还是灰色
+    //传入颜色为16进制
+    function isColorGrey(chosenColor) {
+        var decimalNumber = parseInt(chosenColor, 16)
+        var standard = parseInt(GREY, 16)
+        if (Math.abs(standard - decimalNumber) < 30) {
+            return true
+        }
+        return false
+    }
+
+    //这个函数的作用是将形如rgb(128, 128, 128)的字符串改为"808080"字符串
+    //编写这个函数的原因见getSvgContent函数里的注释
+    function RGB2Hex(CSSColor) {
+        // 从 rgbString 中提取三个分量值
+        var rgbValues = CSSColor.match(/\d+/g);
+        var r = parseInt(rgbValues[0]);
+        var g = parseInt(rgbValues[1]);
+        var b = parseInt(rgbValues[2]);
+
+        // 将三个分量值转换为十六进制，并拼接成最终的颜色字符串
+        var hexColor = ((r << 16) | (g << 8) | b).toString(16).padStart(6, "0").toUpperCase();
+        return hexColor;
+    }
+
+    function handleClick(chosenColor) {
+        //获取点击的是哪一个笔画，灰的变红(PINK-i)，红的变灰(808080-i)，i为笔画顺序，取值0,1,2,...
+        var paths = svgDoc_leave.getElementsByTagName("path");
+        var strokeNum = paths.length; //该字的笔画数目
+        for (var i = 0; i < strokeNum; i++) {
+            var element = svgDoc_leave.querySelector(".stroke" + (i + 1));
+            if ("#" + RGB2Hex(element.style.fill) == chosenColor) {
+                if (isColorGrey(RGB2Hex(element.style.fill))) {
+                    console.log("选中的是灰色的笔画")
+                    //gpt帮我写的，设置成比宏定义PINK小_i的数的字符串
+                    var decimalNumber = parseInt(PINK, 16);
+                    var decimalNumberMinusOne = decimalNumber - i;
+                    var hexadecimalResult = decimalNumberMinusOne.toString(16).toUpperCase();
+                    var paddedResult = hexadecimalResult.padStart(6, "0");
+                    element.style.fill = "#" + paddedResult;
+                }
+                else {
+                    console.log("选中的是红色的笔画")
+                    //gpt帮我写的，设置成比宏定义GREY小_i的数的字符串
+                    var decimalNumber = parseInt(GREY, 16);
+                    var decimalNumberMinusOne = decimalNumber - i;
+                    var hexadecimalResult = decimalNumberMinusOne.toString(16).toUpperCase();
+                    var paddedResult = hexadecimalResult.padStart(6, "0");
+                    element.style.fill = "#" + paddedResult;
+                }
+                break
+            }
+        }
+
+
+        //在canvas上显示出来
+        var modifiedSVG1 = svgDoc_leave.innerHTML;
+        // 使用 FileSaver.js 或其他方法来保存 modifiedSVG 到你的计算机
+        // 创建一个Blob对象来保存修改后的SVG文件内容
+        var blob1 = new Blob([modifiedSVG1], { type: "image/svg+xml" });
+        //清空画布并把新图显示在画布上
+        const img = new Image();
+        img.src = URL.createObjectURL(blob1);
+        img.onload = () => {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(-canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
+            ctx.drawImage(img, -imgW / 2, -imgH / 2, imgW, imgH);
+        };
+    }
+
+    async function showOnload(uni, ch) {
+        //先判断是否真的有这个字
+        svgPath = './svgs-still/' + uni + '-still.svg'
+
+        //初始化svgDoc们
+        //因为HTML-js不能保存文件，因此我只能额外定义变量专门存放画布上应该显示的svg的内容了
+        //这里定义了：
+        //
+        //svgDoc_leave，画布上该显示的svg的内容
+        //svgDoc_send，该发送给后端渲染的svg的内容
+        //svgDoc_initial，svg最初的内容，避免二次读取了，因为异步很麻烦
+        //
+        //本函数的功能是：初始化svgDoc，画布上最开始显示的就是原svg
+        await new Promise((resolve, reject) => {
+            try {
+                //离谱了，你这里还不能删掉这句看似多余的.then(response => response.text())，不然寄掉了
+                fetch(svgPath)
+                    .then(response => {
+                        if (!response.ok) {
+                            // throw new Error('Network response was not ok');
+                            //因为这个OCR还挺有意思，写个字母a,他真的给你返回unicode是97
+                            console.log('其实是字库里没有那个unicode，但对用户不能这样说', response)
+                            alert("您输入的是「" + ch + "」吗？恭喜您发现了系统的边界，请尝试输入其他汉字，我们的系统也将继续完善")
+                            backWrite()
+                            reject("在初始化svg的函数里被抛出")
+                        }
+                        return response.text()
+                    })
+                    .then(data => {
+                        var svgDoc = document.createElement("div")
+                        svgDoc.innerHTML = data
+                        //因为通过querySelector设置fill颜色，是设置在path标签下添加一个style，而不是修改style标签下的css样式
+                        //所以你还不能直接把data赋值给innerHTML，要先按照style设置一下所有path的style="fill:??"，避免之后querySelector().style.fill获得的是null
+                        var paths = svgDoc.getElementsByTagName("path");
+                        var strokeNum = paths.length; //该字的笔画数目
+                        for (var i = 1; i <= strokeNum; i++) {
+                            var element = svgDoc.querySelector(".stroke" + i);
+                            var decimalNumber = parseInt(GREY, 16);
+                            var decimalNumberMinusOne = decimalNumber - (i - 1);
+                            var hexadecimalResult = decimalNumberMinusOne.toString(16).toUpperCase();
+                            var paddedResult = hexadecimalResult.padStart(6, "0");
+                            //这里值得注意的是：尽管赋的值是#808080，但进入fill样式的是原生CSS颜色表示样式rgb(128, 128, 128)
+                            //因此使用时需要额外转化一下，这里我编写了一个RGB2Hex函数
+                            element.style.fill = "#" + paddedResult;
+                            element.style.display = 'block'
+                            // console.log("#"+paddedResult)
+                            // console.log(element.style.fill)
+                        }
+                        
+                        svgDoc_initial = svgDoc.cloneNode(true)
+                        svgDoc_send = svgDoc.cloneNode(true)
+                        svgDoc_leave = svgDoc.cloneNode(true)
+                        resolve(svgDoc)
+                    })
+            }
+            catch (error) {
+                //因为这个OCR还挺有意思，写个字母a,他真的给你返回unicode是97
+                console.log('其实是字库里没有那个unicode，但对用户不能这样说', error)
+                alert("无法正确识别，还请您重新书写~")
+                backWrite()
+            }
+
+        })
+
+        //然后再装载图片
+        await new Promise((resolve, reject) => {
+            initImgH = canvasH * 0.6
+            initImgW = canvasH * 0.6
+            img.src = svgPath;
+            img.onload = function () {
+                imgH = initImgW
+                imgW = initImgH
+                //记录一下canvas原点  为图片的中心点,因为旋转图标在外面，初始化改变一下位置，离边远一点
+                PO = { x: canvasW / 2, y: canvasH / 2 };
+                //改变画布的中心点
+                ctx.translate(PO.x, PO.y)
+                drawSVG();
+                resolve()
+            }
+            img.onerror = function () {
+                //因为这个OCR还挺有意思，写个字母a,他真的给你返回unicode是97
+                console.log('其实是字库里没有那个unicode，但对用户不能这样说', '本报错由img.onerror抛出')
+                alert("无法正确识别，还请您重新书写~")
+                backWrite()
+                reject()
+            }
+        })
+
+        //再来操作phase也不迟！！！
+        checkPhase()
+
+        //读取画布上有鼠标被按下，实时更新位置显示并判定是否拖动
+        canvas.onmousedown = async function (e) {
+            //e.offsetX是鼠标点击到canvas边的位置
+            beginX = e.offsetX;
+            beginY = e.offsetY;
+            //把点击的win坐标转为canvas坐标
+            var Cp = convertCoordinate(beginX, beginY)
+            let imageData = ctx.getImageData(e.layerX, e.layerY, 1, 1)
+            chosenColor = '#' + ("0" + imageData.data[0].toString(16)).substr(-2).toUpperCase()
+                + ("0" + imageData.data[1].toString(16)).substr(-2).toUpperCase()
+                + ("0" + imageData.data[2].toString(16)).substr(-2).toUpperCase()   // 转换为16进制
+
+            await handleClick(chosenColor)
+        }
+    }
+
+    //画图
+    function drawSVG() {
+        //先清除画布，清除两倍的画布，因为要改变坐标原点，只有这样才能不管原点在哪里都能完全清除画布
+        ctx.clearRect(-canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
+        //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
+        ctx.drawImage(img, -imgW / 2, -imgH / 2, imgW, imgH);
+    }
+
+</script>
+
+<!-- 输入标签并渲染 -->
+<script>
+
+    // 这个变量用来记录是否已经渲染完毕
+    // 刚进入render函数时置false；手动取消、渲染出错、渲染完6张后置true
+    // 定义它的目的是：axios.all并发了6个请求，发出去了就无法收回只能”拦截“。
+    // 如果只渲染了3张就取消，后面若还继续接受剩下的3张图片，可能会严重报错
+    // 但是这里偷懒没有使用拦截器，定义了一个变量充当拦截器的作用，即若它是true，那就不push了，具体在requestA~F函数内能看到
+    var renderOver = false
+
+    var renderRsultData = [] //记录渲染结果，一共六个元素
+
+    //thanks to chatgpt，我可以通过定时函数设置一个闪烁的功能
+    // 设置开始和终止的标志
+    let isTaskRunning = false;
+    let intervalId = null;
+    // 开始定时任务
+    function startTask() {
+        if (!isTaskRunning) {
+            isTaskRunning = true;
+            intervalId = setInterval(myFunction, 500); // 每隔0.5秒执行 myFunction 函数
+        }
+    }
+    // 终止定时任务
+    function stopTask() {
+        if (isTaskRunning) {
+            clearInterval(intervalId);
+            isTaskRunning = false;
+        }
+    }
+    // 定义要执行的函数
+    function myFunction() {
+        console.log("这是定时任务的函数");
+        var paths = svgDoc_leave.getElementsByTagName("path")
+        //对svgDoc_leave设置可不可见
+        for (var i = 1; i <= paths.length; i++) {
+            var element = svgDoc_leave.querySelector(".stroke" + i)
+            if (!isColorGrey(RGB2Hex(element.style.fill))) {
+                //若被选中的笔画可见，则设置不可见；反之设置为可见，以实现闪烁的效果
+                if (element.style.display == 'none') {
+                    element.style.display = 'block'
+                }
+                else {
+                    element.style.display = 'none'
+                }
+            }
+        }
+
+        //清空右半侧画布并把新图显示在画布上
+        var modifiedSVG1 = svgDoc_leave.innerHTML;
+        var blob1 = new Blob([modifiedSVG1], { type: "image/svg+xml" });
+        img.src = URL.createObjectURL(blob1);
+        img.onload = () => {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(canvas.width / 2, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, canvasW / 1404 * 945 - imgW / 2, canvasH / 1080 * 513 - imgH / 2, imgW, imgH);
+        }
+    }
+
+    //显示蒙版并禁止用户除modal以外的所有操作
+    function disablePage() {
+        var overlay = document.getElementById("overlay");
+        overlay.style.backgroundColor = "rgba(0, 0, 0, 0.6)"
+        overlay.style.display = "block";
+
+        var elements = document.querySelectorAll("body > *:not(#modal)");
+        elements.forEach(function (element) {
+            element.classList.add("disabled");
+        });
+    }
+    //删除蒙版并恢复modal以外的所有页面操作
+    function enablePage() {
+        var overlay = document.getElementById("overlay");
+        overlay.style.display = "none";
+
+        var elements = document.querySelectorAll("body > *:not(#modal)");
+        elements.forEach(function (element) {
+            element.classList.remove("disabled");
+        });
+    }
+
+    //点击选择完毕按钮
+    function slectedOver() {
+        console.log("进入第三阶段：输入标签")
+        phase = 3
+        checkPhase()
+
+        // console.log("重画字的位置，设置原点为(canvasW * 1/3, canvasH * 1/2")
+        ctx.translate(-PO.x, -PO.y)
+        PO = { x: canvasW * 1 / 3, y: canvasH * 1 / 2 }
+        ctx.translate(PO.x, PO.y)
+        // imgW = imgW * 0.5
+        // imgH = imgH * 0.5
+
+        //清空画布并把新图显示在画布上
+        var modifiedSVG1 = svgDoc_leave.innerHTML;
+        var blob1 = new Blob([modifiedSVG1], { type: "image/svg+xml" });
+        img.src = URL.createObjectURL(blob1);
+        img.onload = () => {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(-canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
+            ctx.drawImage(img, -imgW / 2, -imgH / 2, imgW, imgH);
+        };
+
+        // 出现选择框
+        clearDraw()
+        showInput()
+        var oDivWrap = document.querySelector('.wrap');
+        oDivWrap.style.display = 'none';
+    }
+
+    //展示输入框
+    function showInput() {
+        const inputContainer = document.getElementById("container");
+        const inputBar = inputContainer.querySelector(".inputRenderLabelBar");
+        const inputButton = inputContainer.querySelector(".inputRenderLabelBtn");
+        // 将输入框显示在相应位置
+        inputContainer.style.display = "flex"
+        inputContainer.style.left = canvasW * 3130 / 6580 + "px";
+        inputContainer.style.top = canvasH * 1825 / 4320 + "px";
+
+        //设置inputBar长度
+        inputBar.style.width = canvasW * 600 / 1980 + "px";
+        inputBar.style.height = canvasH * 70 / 1367 + "px";
+    }
+
+    // 隐藏输入框
+    async function hideInput() {
+        const inputBox = document.getElementById("container");
+        var inputEng = inputBox.querySelector("input").value
+        await axios({
+            method: 'POST',
+            url: '/translate',
+            data: {
+                "text": inputBox.querySelector("input").value,
+            }
+        })
+            .then(res => {
+                console.log("打印一下翻译返回", res)
+                inputEng = res.data.translation
+            })
+            .catch(error => {
+                console.log('翻译出现错误', error.message)
+            })
+
+        console.log("你输入的英文是", inputEng)
+        return new Promise((resolve, reject) => {
+            //1. 获取显示在画布上的和该发送给接口的图片
+            var paths = svgDoc_send.getElementsByTagName("path");
+            var strokeNum = paths.length
+            //我去，chatgpt真的好牛，删除会改变下标，我直接从后往前就好了
+            for (var i = strokeNum; i > 0; i--) {
+                //对svgDoc_leave的笔画颜色下手
+                var strokeHexColor = RGB2Hex(svgDoc_leave.querySelector(".stroke" + i).style.fill)
+                if (isColorGrey(strokeHexColor)) {
+                    //未被选中，则发送渲染的删除
+                    paths[i - 1].remove();
+                }
+                else {
+                    //已被选中，则发送渲染的变黑
+                    svgDoc_send.querySelector(".stroke" + i).style.fill = 'black'
+                }
+            }
+
+            //2. 将该发送的发送出去
+            var modifiedSVG = svgDoc_send.innerHTML
+            // 获取 SVG 根节点
+            var svgRoot = svgDoc_send.firstChild;
+            // 创建一个新的 Image 对象
+            var iiimggg = new Image();
+            // 将 SVG 转换为图片
+            iiimggg.src = 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(modifiedSVG)));
+            // 当 SVG 转化为图片时触发
+            iiimggg.onload = async function () {
+                // 创建一个 Canvas 元素
+                var canvas1 = document.createElement('canvas');
+                canvas1.width = iiimggg.width;
+                canvas1.height = iiimggg.height;
+
+                // 在 Canvas 上绘制 SVG
+                var ctx1 = canvas1.getContext('2d');
+                ctx1.drawImage(iiimggg, 0, 0);
+                // 将 Canvas 转换为 base64 编码的图片
+                var base64Image = canvas1.toDataURL();
+
+                oldInputEng = inputEng    //记录，方便回传
+                oldBase64 = base64Image   //记录
+
+                await render(inputEng, base64Image)
+            };
+        })
+    }
+
+    async function render(inputEng, base64Image) {
+        console.log("base64待渲染", base64Image)
+        // 置否
+        renderOver = false
+
+        i = 1
+        //清空数组
+        renderRsultData.length = 0;
+        // 创建一个 AbortController 实例
+        const controller = new AbortController();
+        // 获取弹窗元素对象
+        var modal = document.getElementById("modal");
+        //先把它置为最底层
+        modal.style.zIndex = 1;
+        // 获取取消按钮元素对象
+        var cancel = document.getElementById("cancel");
+        // 定义一个变量，用来存储已加载成功的图片数量
+        var count = 0;
+        document.getElementById("count").textContent = count;
+
+        // 给取消按钮添加 click 事件监听器，执行完毕之后自动删除自己，避免下一次渲染的时候就没有蒙版了
+        const cancelRender = function () {
+            // 调用 AbortController 的 abort 方法，取消请求
+            controller.abort();
+            // 置是
+            renderOver = true
+            console.log("用户点击取消按钮")
+            // 隐藏弹窗
+            modal.classList.add("hidden");
+            // 取消蒙版并恢复用户操作网页
+            enablePage()
+            // 调用完毕后自动删除自己
+            cancel.removeEventListener('click', cancelRender)
+            console.log(renderRsultData)
+            showsixOnload(renderRsultData, sucnum)
+        }
+        cancel.addEventListener("click", cancelRender)
+
+        //成功加载的数目
+        var sucnum = 0;
+        console.log(getCookie("userId"));
+
+        // 封装接口 A 的请求函数
+        function requestA(i, controller) {
+            return axios({
+                method: "POST",
+                url: "/render",
+                data: {
+                    base64: base64Image,
+                    prompt: inputEng,
+                    batch_size: 1,
+                    n_iter: 2,
+                },
+                signal: controller.signal,
+            }).then((res) => {
+                if (!renderOver) {
+                    renderRsultData.push(res.data);
+                    count++;
+                    document.getElementById("count").textContent = count;
+                    //console.log("第" + i + "轮渲染成功，由原服务器完成");
+                    console.log("渲染成功，由接口A完成");
+                    sucnum++;
+
+                    //开放modal蒙版访问
+                    if (i == 1) {
+                        modal.style.zIndex = 1000;
+                    }
+                }
+            });
+        }
+
+        const promises = [
+            requestA(i, controller),
+            requestA(i, controller),
+            requestA(i, controller),
+            requestA(i, controller),
+            requestA(i, controller),
+            requestA(i, controller)
+        ]
+
+        // 使用 Promise.all 实现并发处理数据       
+        try {
+            sucnum = 0;
+            // 显示弹窗
+            modal.classList.remove("hidden");
+            //显示蒙版并禁止用户其他操作
+            disablePage()
+            console.log("一次渲染6张")
+
+            await axios.all(promises);
+
+            // 隐藏弹窗
+            modal.classList.add("hidden");
+            //取消蒙版并恢复用户其他操作
+            enablePage()
+        }
+        catch (error) {
+            //如果用户自己点击取消按钮
+            if (error.message == 'canceled') {
+                console.log('接口正常时取消渲染', error.message);
+                // 中止渲染请求
+                controller.abort();
+                // 之后的渲染获取到结果不再处理
+                renderOver = false
+                // 隐藏弹窗
+                modal.classList.add("hidden");
+                //取消蒙版并恢复用户其他操作
+                enablePage()
+            }
+            // 如果出现错误或超时，使用接口 F 完成剩余的图片渲染
+            else {
+                console.log("出现错误或超时", error.message);
+                // 之后的渲染获取到结果不再处理
+                renderOver = false
+                // 隐藏弹窗
+                modal.classList.add("hidden");
+                //取消蒙版并恢复用户其他操作
+                enablePage()
+            }
+        }
+
+        //首先保存一份深拷贝，具体原因看这个全局变量被定义的地方
+        svgDoc_leave_deepcopy = svgDoc_leave.cloneNode(true)
+
+        showsixOnload(renderRsultData, sucnum)
+    }
+
+    //新添加
+    function showsixOnload(data, sucnum) {
+        console.log("进入新阶段：展示6个渲染图片")
+        phase = 6
+        checkPhase()
+        clearDraw()
+
+        ctx.translate(-PO.x, -PO.y)
+        PO = { x: 0, y: 0 };
+        ctx.translate(PO.x, PO.y)
+
+        imgH_W = 3752 / 6576
+        scaling = canvasH_W / imgH_W
+
+        if (sucnum >= 1) {
+            //画img1
+            img1.src = data[0].base64;
+            img1.onload = function () {
+                img1H = canvasH * 170 / 1100
+                img1W = canvasH * 170 / 1100
+                //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
+                ctx.drawImage(img1, canvasW / 1404 * 405 - img1W / 2, canvasH / 3752 * 1070 * scaling - img1H / 2, img1W, img1H);
+            }
+        }
+        if (sucnum >= 2) {
+            //画img2
+            img2.src = data[1].base64;
+            img2.onload = function () {
+                //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
+                ctx.drawImage(img2, canvasW / 1404 * 585 - img1W / 2, canvasH / 3752 * 1070 * scaling - img1H / 2, img1W, img1H);
+            }
+        }
+        if (sucnum >= 3) {
+            //画img3
+            img3.src = data[2].base64;
+            img3.onload = function () {
+                //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
+                ctx.drawImage(img3, canvasW / 1404 * 405 - img1W / 2, canvasH / 2.03 - img1H / 2, img1W, img1H);
+            }
+        }
+        if (sucnum >= 4) {
+            //画img4
+            img4.src = data[3].base64;
+            img4.onload = function () {
+                //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
+                ctx.drawImage(img4, canvasW / 1404 * 585 - img1W / 2, canvasH / 2.03 - img1H / 2, img1W, img1H);
+            }
+        }
+        if (sucnum >= 5) {
+            //画img5
+            img5.src = data[4].base64;
+            img5.onload = function () {
+                //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
+                ctx.drawImage(img5, canvasW / 1404 * 405 - img1W / 2, canvasH / 2.03 * 2 - canvasH / 3752 * 1070 * scaling - img1H / 2, img1W, img1H);
+            }
+        }
+        if (sucnum >= 6) {
+            //画img6
+            img6.src = data[5].base64;
+            img6.onload = function () {
+                //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
+                ctx.drawImage(img6, canvasW / 1404 * 585 - img1W / 2, canvasH / 2.03 * 2 - canvasH / 3752 * 1070 * scaling - img1H / 2, img1W, img1H);
+            }
+        }
+        //重新定义事件
+        //鼠标选中图片
+        clickImg = function (x, y) {
+            //找到图片的最小值和最大值，因为画图是从-imgW / 2开始的，那么这就是图片占据的位置的最小值，最大值是imgW / 2,y轴同理
+            if (canvasW / 1404 * 405 - img1W / 2 < x && x < canvasW / 1404 * 405 + img1W / 2 && canvasH / 3752 * 1070 * scaling - img1H / 2 < y && y < canvasH / 3752 * 1070 * scaling + img1H / 2 && sucnum >= 1) {
+                return 1
+            }
+            else if (canvasW / 1404 * 585 - img1W / 2 < x && x < canvasW / 1404 * 585 + img1W / 2 && canvasH / 3752 * 1070 * scaling - img1H / 2 < y && y < canvasH / 3752 * 1070 * scaling + img1H / 2 && sucnum >= 2) {
+                return 2
+            }
+            else if (canvasW / 1404 * 405 - img1W / 2 < x && x < canvasW / 1404 * 405 + img1W / 2 && canvasH / 2.03 - img1H / 2 < y && y < canvasH / 2.03 + img1H / 2 && sucnum >= 3) {
+                return 3
+            }
+            else if (canvasW / 1404 * 585 - img1W / 2 < x && x < canvasW / 1404 * 585 + img1W / 2 && canvasH / 2.03 - img1H / 2 < y && y < canvasH / 2.03 + img1H / 2 && sucnum >= 4) {
+                return 4
+            }
+            else if (canvasW / 1404 * 405 - img1W / 2 < x && x < canvasW / 1404 * 405 + img1W / 2 && canvasH / 2.03 * 2 - canvasH / 3752 * 1070 * scaling - img1H / 2 < y && y < canvasH / 2.03 * 2 - canvasH / 3752 * 1070 * scaling + img1H / 2 && sucnum >= 5) {
+                return 5
+            }
+            else if (canvasW / 1404 * 585 - img1W / 2 < x && x < canvasW / 1404 * 585 + img1W / 2 && canvasH / 2.03 * 2 - canvasH / 3752 * 1070 * scaling - img1H / 2 < y && y < canvasH / 2.03 * 2 - canvasH / 3752 * 1070 * scaling + img1H / 2 && sucnum >= 6) {
+                return 6
+            }
+            else {
+                return 0
+            }
+        }
+        //渲染完了，该调用 startTask() 来开始定时任务闪烁了
+        startTask()
+        //鼠标点击+鼠标移动
+        canvas.onmousedown = async function (e) {
+            //e.offsetX是鼠标点击到canvas边的位置
+            lastX = e.offsetX;
+            lastY = e.offsetY;
+            //鼠标点击时的相对坐标
+            var Cp = convertCoordinate(lastX, lastY)
+
+            canMove = clickImg(lastX, lastY)
+            canvas.onmouseup = function () {
+                if (canMove == 0) {
+                    canvas.onmouseup = null;
+                }
+                else if (1 <= canMove <= 6) {
+                    console.log(canMove)
+                    //中止定时任务
+                    stopTask()
+                    //清除鼠标点击事件
+                    canvas.onmousedown = null
+                    canvas.onmouseup = null
+                    assembleOnload(data[canMove - 1])
+                }
+            }
+
+        }
+    }
+</script>
+
+<!-- 移动部分 -->
+<script>
+    var img0 = new Image();
+    //新添加
+    var img1 = new Image();
+    var img2 = new Image();
+    var img3 = new Image();
+    var img4 = new Image();
+    var img5 = new Image();
+    var img6 = new Image();
+    var canMove = true;
+    var canScale = true;
+    var lastX, lastY;
+    var img0H, img0W, initImg0H, initImg0H, img1W, img1H;
+
+    
+    function returnPrevious() {
+        console.log("点击返回")
+        //显示“下载”按钮
+        var dwnbtn = document.getElementById('dwnbtn');
+        dwnbtn.style.right = canvasW / 10 + 'px';
+        dwnbtn.style.bottom = canvasH / 13 + 'px';
+        dwnbtn.style.width = canvasW / 11 + 'px';
+        dwnbtn.style.height = canvasH / 12 + "px";
+        dwnbtn.style.display = "block";
+        //显示“返回”按钮
+        var returnPreviousCSS = document.getElementById('returnPreviousCSS')
+        returnPreviousCSS.style.display = "block";
+        //新添加
+        //不显示“重新生成”按钮
+        var reRenderCSS = document.getElementById('reRenderCSS')
+        reRenderCSS.style.display = "none";
+
+        
+        svgDoc_leave = svgDoc_leave_deepcopy.cloneNode(true)
+        showsixOnload(renderRsultData, renderRsultData.length)
+    }
+
+
+    function assembleOnload(data) {
+        console.log("进入第四阶段：移动")
+        phase = 4
+        checkPhase()
+        clearDraw()
+
+        ctx.translate(-PO.x, -PO.y)
+        PO = { x: canvasW / 2, y: canvasH / 2 };
+        ctx.translate(PO.x, PO.y)
+        //画img
+        new Promise((resolve, reject) => {
+            //将画布上的svg变成黑笔画
+            var paths = svgDoc_leave.getElementsByTagName("path")
+            //我去，chatgpt真的好牛，删除会改变下标，我直接从后往前就好了
+            for (var i = paths.length; i > 0; i--) {
+                var strokeHexColor = RGB2Hex(svgDoc_leave.querySelector(".stroke" + i).style.fill)
+                if (isColorGrey(strokeHexColor)) {
+                    //未被选中，则变黑
+                    svgDoc_leave.querySelector(".stroke" + i).style.fill = 'black'
+                }
+                else {
+                    //已被选中，则删除
+                    paths[i - 1].remove();
+                }
+            }
+
+            //清空画布并把新图显示在画布上
+            var modifiedSVG1 = svgDoc_leave.innerHTML
+            var blob1 = new Blob([modifiedSVG1], { type: "image/svg+xml" })
+            img.src = URL.createObjectURL(blob1);
+            img.onload = () => {
+                ctx.drawImage(img, -initImgW / 2, -initImgH / 2, initImgW, initImgH)
+                resolve()
+            };
+        })
+        console.log("装载img完毕，开始装载img0")
+        //画img0
+        img0.src = data.base64;
+        img0.onload = function () {
+            img0H = data.height
+            img0W = data.width
+            initImg0H = img0H
+            initImg0W = img0W
+            //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
+            ctx.drawImage(img0, -img0W / 2, -img0H / 2, img0W, img0H);
+
+        }
+
+        //重新定义事件
+        //鼠标选中图片
+        clickImg0 = function (x, y) {
+            //找到图片的最小值和最大值，因为画图是从-imgW / 2开始的，那么这就是图片占据的位置的最小值，最大值是imgW / 2,y轴同理
+            if (-img0W / 2 < x && x < img0W / 2 && -img0H / 2 < y && y < img0H / 2) {
+                return true;
+            }
+            return false
+        }
+        //鼠标点击+鼠标移动
+        canvas.onmousedown = async function (e) {
+            //e.offsetX是鼠标点击到canvas边的位置
+            lastX = e.offsetX;
+            lastY = e.offsetY;
+            //鼠标点击时的相对坐标
+            var Cp = convertCoordinate(lastX, lastY)
+            canMove = clickImg0(Cp.x, Cp.y)
+
+            //将图片边缘描黑
+            canvas.onmousemove = (e) => {
+                var x = e.offsetX;
+                var y = e.offsetY;
+
+                if (canMove) {
+                    //算出来移动的像素（每次都是减去上次的值）
+                    var Mx = x - lastX;
+                    var My = y - lastY;
+                    //根据移动重新规划零点
+                    PO = { x: Mx + PO.x, y: My + PO.y };
+                    ctx.translate(Mx, My)
+                    drawImg0(PO)
+                    lastX = x;  //保存起来这次图画到了哪里
+                    lastY = y;
+                }
+            }
+            document.onmouseup = function () {
+                canvas.onmousemove = null;
+                document.onmouseup = null;
+                canMove = false
+            }
+        }
+        //鼠标滚轮
+        canvas.onmousewheel = function (e) {
+            // console.log("鼠标滚轮事件",e)
+            var x = e.offsetX;
+            var y = e.offsetY;
+            var Cp = convertCoordinate(x, y)
+            canScale = clickImg0(Cp.x, Cp.y)
+            //同样需要判断如果鼠标在图片上，才允许缩放
+            if (canScale) {
+                //e.wheelDelta如果大于0，证明鼠标是向上滚动，反之向下
+                //使用*=错误的，因为你要是1.04->1.02，虽然是小，但是还是在增大!所以要用initImgW固定值！
+                if (img0H < canvasH * 2 / 3 && e.wheelDelta > 0) {
+                    //放大的倍数可以根据实际情况定义，可以丝滑一点
+                    scale += 0.02
+                }
+                if (img0W > 100 && e.wheelDelta < 0) {
+                    scale -= 0.02
+                }
+                img0W = scale * initImg0W;
+                img0H = scale * initImg0H;
+                drawImg0()
+            }
+        }
+
+    }
+
+    function drawImg0() {
+        ctx.clearRect(-canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
+        //指定中心为画布正中央
+        ctx.translate(-PO.x, -PO.y);
+        ctx.translate(canvasW / 2, canvasH / 2)
+        ctx.drawImage(img, -initImgW / 2, -initImgH / 2, initImgW, initImgH)
+        ctx.translate(-canvasW / 2, -canvasH / 2)
+        ctx.translate(PO.x, PO.y);
+        ctx.drawImage(img0, -img0W / 2, -img0H / 2, img0W, img0H);
+    }
+</script>
+
+<!-- 保存部分 -->
+<script>
+    function download() {
+        console.log("进入第五阶段：保存")
+        phase = 5
+        checkPhase()
+
+        QRcode()
+    }
+
+    //点击“重新输入标签”
+    function backInput() {
+        console.log("点击重新输入标签")
+        //不显示“下载”按钮
+        var dwnbtn = document.getElementById('dwnbtn')
+        dwnbtn.style.display = "none"
+        //不显示“首页”按钮
+        var returnHomeCSS = document.getElementById('returnHomeCSS')
+        returnHomeCSS.style.display = "none"
+        //不显示“重新输入标签”按钮
+        var backInputCSS = document.getElementById('backInputCSS')
+        backInputCSS.style.display = "none";
+        //不显示“重新生成”按钮
+        var reRenderCSS = document.getElementById('reRenderCSS')
+        reRenderCSS.style.display = "none";
+        //不显示二维码
+        var qr = document.getElementById("qrcode")
+        qr.style.display = "none";
+        qr.innerHTML = '' //清空
+        phase = 3
+
+        //有“展示6张图片时返回”和“最后一页返回”两种情景
+        //需要做些处理————
+
+        //1.中止定时任务
+        stopTask()
+        //2.复原显示svgDoc_leave
+        console.log(svgDoc_leave_deepcopy)
+        svgDoc_leave = svgDoc_leave_deepcopy.cloneNode(true)
+        // 如果运气不好，刚好被点掉了，我把它复原回来
+        var paths = svgDoc_leave.getElementsByTagName("path")
+        //对svgDoc_leave设置可不可见
+        for (var i = 1; i <= paths.length; i++) {
+            var element = svgDoc_leave.querySelector(".stroke" + i)
+            if (!isColorGrey(RGB2Hex(element.style.fill))) {
+                //若被选中的笔画可见，则设置不可见；反之设置为可见，以实现闪烁的效果
+                if (element.style.display == 'none') {
+                    element.style.display = 'block'
+                }
+            }
+        }
+    
+        slectedOver()
+    }
+
+    function reRender() {
+        console.log("点击重新生成")
+        //不显示“下载”按钮
+        var dwnbtn = document.getElementById('dwnbtn')
+        dwnbtn.style.display = "none"
+        //不显示“重新输入标签”按钮
+        var backInputCSS = document.getElementById('backInputCSS')
+        backInputCSS.style.display = "none";
+        //不显示“重新生成”按钮
+        var reRenderCSS = document.getElementById('reRenderCSS')
+        reRenderCSS.style.display = "none";
+
+        phase = 3
+        //1.中止定时任务
+        stopTask()
+        //2.重新渲染
+        console.log("老的")
+        console.log(oldInputEng)
+        console.log(oldBase64)
+        render(oldInputEng, oldBase64)
+    }
+
+    async function QRcode() {
+        console.log("正在生成二维码了")
+        final()
+        console.log("已将一切置空")
+
+        // 将图片转换为 Base64 编码
+        var canvasBase64 = canvas.toDataURL('image/png');
+        var base64Image = ''
+        var saveImg = new Image();
+        // 将 SVG 转换为图片
+        saveImg.src = canvasBase64
+        // 当 SVG 转化为图片时触发
+        await new Promise(resolve => {
+            saveImg.onload = function () {
+                // 创建一个 Canvas 元素
+                var canvas2 = document.createElement('canvas');
+                canvas2.width = saveImg.width;
+                canvas2.height = saveImg.height;
+
+                // Canvas2打上白底再画上saveImg
+                var ctx2 = canvas2.getContext('2d');
+                ctx2.fillStyle = "white"
+                ctx2.fillRect(0, 0, canvasW, canvasH);//填充画矩形
+                ctx2.drawImage(saveImg, 0, 0);
+                // 将 Canvas 转换为 base64 编码的图片
+                base64Image = canvas2.toDataURL();
+                resolve()
+            };
+        })
+
+        //上传阿里云
+        var url = ''
+        console.log("检查此时的base64Image", base64Image)
+        await axios({
+            method: 'POST',
+            url: '/upload',
+            data: {
+                "data": base64Image,
+            }
+        })
+            .then(res => {
+                console.log("上传成功", res)
+                url = res.data.urls
+            })
+            .catch(error => {
+                console.log('上传出现错误', error.message)
+            })
+
+        // 将 Base64 编码生成二维码
+        const qr = document.getElementById("qrcode")
+        console.log("检查当前url", url)
+        var qrcode = new QRCode(qr, {
+            text: url,
+            width: canvasH / 4,
+            height: canvasH / 4,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        qr.style.display = "block";
+    }
+
+    //最后的最后，一切置空
+    function final() {
+        //将各种事件置空
+        canvas.onmousedown = null
+        canvas.onmouseleave = null
+        canvas.onmouseup = null
+        canvas.onmousemove = null
+        canvas.onmousewheel = null
+        canvas.onmouseover = null
+
+        //将回退按钮显现
+        const returnHomeCSS = document.getElementById("returnHomeCSS")
+        returnHomeCSS.style.display = "block";
+        var backInputCSS = document.getElementById('backInputCSS')
+        backInputCSS.style.left = "180px";
+        backInputCSS.style.display = "block";
+    }
+
+    function returnHome() {
+        console.log("重回主页")
+        //不显示“首页”按钮
+        var returnHomeCSS = document.getElementById('returnHomeCSS')
+        returnHomeCSS.style.display = "none"
+        //不显示“重新输入标签”按钮
+        var backInputCSS = document.getElementById('backInputCSS')
+        backInputCSS.style.display = "none";
+        //不显示二维码
+        var qr = document.getElementById("qrcode")
+        qr.style.display = "none";
+        qr.innerHTML = '' //清空
+
+        var clickFunction = function () {
+            window.onload()
+            //执行完毕之后自动删除自己，避免出bug
+            document.removeEventListener('click', clickFunction)
+        }
+        document.addEventListener('click', clickFunction)
+    }
+</script>
