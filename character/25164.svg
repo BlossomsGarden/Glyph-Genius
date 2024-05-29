@@ -1,0 +1,44 @@
+<svg version="1.1" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  
+  <g transform="scale(1, -1) translate(0, -900)">
+    <style type="text/css">
+        .stroke1 {fill: #808080;}
+        .stroke2 {fill: #808079;}
+        .stroke3 {fill: #808078;}
+        .stroke4 {fill: #808077;}
+        .stroke5 {fill: #808076;}
+        .stroke6 {fill: #808075;}
+        .stroke7 {fill: #808074;}
+        .stroke8 {fill: #808073;}
+        .stroke9 {fill: #808072;}
+        .stroke10 {fill: #808071;}
+        .stroke11 {fill: #808070;}
+        .stroke12 {fill: #808069;}
+        .stroke13 {fill: #808068;}
+        .stroke14 {fill: #808067;}
+        .stroke15 {fill: #808066;}
+        .stroke16 {fill: #808065;}
+        .stroke17 {fill: #808064;}
+        .stroke18 {fill: #808063;}
+        .stroke19 {fill: #808062;}
+        .stroke20 {fill: #808061;}
+        text {
+            font-family: Helvetica;
+            font-size: 50px;
+            fill: #808060;
+            paint-order: stroke;
+            stroke: #000000;
+            stroke-width: 4px;
+            stroke-linecap: butt;
+            stroke-linejoin: miter;
+            font-weight: 800;
+        }
+    </style>
+
+    <path d="M 553 556 Q 640 580 644 583 Q 653 592 648 600 Q 641 612 610 618 Q 582 622 556 613 L 504 594 Q 432 573 356 562 Q 319 555 347 539 Q 386 518 469 537 Q 485 541 503 544 L 553 556 Z" class="stroke1"/>
+    <path d="M 559 138 Q 552 253 551 368 L 550 403 Q 550 479 553 556 L 556 613 Q 560 698 574 745 Q 592 775 536 797 Q 502 816 483 809 Q 465 803 481 780 Q 503 752 504 719 Q 505 704 504 594 L 503 544 Q 502 477 500 380 L 499 333 Q 498 248 496 143 Q 495 121 483 112 Q 474 109 417 125 Q 386 138 387 129 Q 388 122 406 105 Q 464 51 477 22 Q 493 -12 508 -15 Q 523 -16 538 18 Q 557 64 559 138 Z" class="stroke2"/>
+    <path d="M 551 368 Q 582 390 614 407 Q 636 417 648 432 Q 655 445 644 445 Q 637 445 550 403 L 500 380 Q 304 290 299 288 Q 281 288 276 274 Q 275 265 288 250 Q 306 232 328 222 Q 340 219 372 241 Q 435 293 499 333 L 551 368 Z" class="stroke3"/>
+    
+    
+    </g>
+</svg>
