@@ -1,6 +1,9 @@
 # Glyph Genius / 辞海古卷
 
 
+- en [English](README.md)
+- zh_CN [简体中文](README.zh_CN.md)
+
 ## Intro
 
 This project is the core IP of the team "Wisdom Bead Team", formed in 2023 due to an innovative project. I had the privilege of being one of the developers involved in the entire process of the project from idea to initial implementation. The current project website: [https://scroll.ihanzi.net/](https://scroll.ihanzi.net/release.html)
@@ -10,7 +13,7 @@ This project is the core IP of the team "Wisdom Bead Team", formed in 2023 due t
 ## Project Structure
 
 ```
-root/ 根目录
+root/
 │
 ├── background/          UI background image folder
 │

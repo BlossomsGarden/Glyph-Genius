@@ -1,5 +1,7 @@
 # 辞海古卷 / Glyph Genius
 
+- zh_CN [简体中文](README.zh_CN.md)
+- en [English](README.md)
 
 ## 简介
 
