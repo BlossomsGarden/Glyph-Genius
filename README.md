@@ -1,138 +1,150 @@
-# 辞海古卷 / Glyph Genius
+# Glyph Genius / 辞海古卷
 
 
-## 简介
+## Intro
 
-本项目是2023年因创新项目结识组成的团队 “智慧珠珠队” 的核心IP（个人比较喜欢卷济神经网络这个名字）。有幸作为开发者之一参与该项目从idea到初步落地的全流程，做此纪念。当前项目网址：[https://scroll.ihanzi.net/](https://scroll.ihanzi.net/release.html)
+This project is the core IP of the team "Wisdom Bead Team", formed in 2023 due to an innovative project. I had the privilege of being one of the developers involved in the entire process of the project from idea to initial implementation. The current project website: [https://scroll.ihanzi.net/](https://scroll.ihanzi.net/release.html)
 
 
 
-## 项目架构
+## Project Structure
 
 ```
 root/ 根目录
 │
-├── background/          ui 背景图文件夹
+├── background/          UI background image folder
 │
-├── character/           汉字 SVG 文件夹
+├── character/           Chinese character SVG folder
 │
-├── flask/               python-flask 框架后端代码文件夹
+├── flask/               Python-Flask framework backend code folder
 │
-├── ttf/                 甲骨文、金文等汉字 TTF 文件夹
+├── ttf/                 Oracle bone script and other Chinese character TTF folder
 │
 ├── static/             
-│    ├── icon/           系统交互 icon文件夹
+│    ├── icon/           Interaction icon folder
 │    │
-│    ├── js/             引入静态 js 库文件夹
+│    ├── js/             Static js library folder
 │    │
-│    ├── initial.jpg     初始等待界面
-|    └── welcome.gif     欢迎动画
+│    ├── initial.jpg     Initial waiting interface Image
+|    └── welcome.gif     Welcome animation
 │
-├── home.css             主页面 CSS 文件
-├── home.html            主页面 HTML 文件
-└── server.js            node-webpack 部署脚本
+├── home.css             Main page CSS file
+├── home.html            Main page HTML file
+└── server.js            Node-Webpack deployment script
 ```
 
 
 
 
-## 准备工作
-项目本质是 HTML 网页。调试时为方便可以使用 VSCode 进行代码编辑，采用 VS code 中的 Live Server (Ritwick Dey) 实时调试插件进行编辑。安装完成后在 .html 文件中右键并选中 "open with live server"即可查看到前端网页。
+## Preparation
+
+The project is essentially an HTML webpage. For debugging convenience, you can use VSCode for code editing and utilize the Live Server (Ritwick Dey) real-time debugging plugin within VS Code for editing. After installation, right-click on the .html file and select "Open with Live Server" to view the frontend webpage.
 
 
-### 外部接口接入
-访问 [Baidu Translate](https://api.fanyi.baidu.com/) 可申请使用免费翻译接口，在 main.py 中的 /translate 改为自己的 APP-ID 与 SecretKey 即可。访问[Baidu OCR](https://ai.baidu.com/ai-doc/index/OCR)可申请使用 OCR 识别接口，在 main.py 中的 /recognize 进行替换。
+### External API Integration
+
+Visit [Baidu Translate](https://api.fanyi.baidu.com/) to apply for the use of a free translation interface. Replace the APP-ID and SecretKey in main.py with your own. Visit [Baidu OCR](https://ai.baidu.com/ai-doc/index/OCR) to apply for OCR recognition interface usage. Replace the /recognize in main.py accordingly.
 
 
-### 后端部署
-后端使用 Flask 框架开发，代码在 /flask 文件夹下。由于部署本框架的云服务器配置不够，故将绘画大模型、OCR模型部署在校内工作站上，通过信息办的外网端口访问，代码中内网 IP 地址均已隐去。
+### Backend Deployment
+
+The backend is developed using the Flask framework, and the code is in the /flask folder. Due to insufficient cloud server configuration for deploying this framework, the drawing and OCR models are deployed on the campus workstation, accessible through the external port of the Information Office. The internal IP addresses in the code have been hidden.
 
 
 
-### 前端部署
-首先确保电脑/服务器上已安装 node，再在空文件夹中创建 npm 项目：
+### Frontend Deployment
+
+Ensure that Node.js is installed on your computer/server. Create an npm project in an empty folder:
 ```
 Npm init
 
 npm install
 ```
 
-安装 webpack 部署所需的包：
+Install the necessary packages for webpack deployment:
 ```
 npm  install express --save
 ```
 
-执行 server.js 开放端口访问：
+Run server.js to open the port 8092 for access:
 ```
 node server.js
 ```
 
 
+## System Overview
 
-## 界面展示
+Initial Interface
+
+<img src="static/readme/init.png" width="500px">
+
+Stroke Selection
+
+<img src="static/readme/select.png" width="500px">
+
+Stroke Recombination
+
+<img src="static/readme/recombine.png" width="500px">
+
+Download Result
+
+<img src="static/readme/save.png" width="500px">
 
 
-## 版本历史
+Stroke Selection Illustration
+
+<img src="static/readme/1.png" width="500px">
+
+
+Design Result Illustration
+
+<img src="static/readme/2.png" width="500px">
+
+
+
+## Version History
 
 ### v1.0.0
 
-2023年5月21日，双击打开卷轴
+May 21, 2023, Double-click to open the scroll.
 
-2023年6月12日，支持电脑鼠标、手机平板触摸（触摸屏暂不支持），可以在各基本功能页行基本交互
+June 12, 2023, Support for computer mouse and mobile tablet touch (touchscreen not supported yet), basic interactions on various functional pages.
 
-网页里面gif和图片加载的很慢，是云服务器带宽不够（口袋里米不够），耐心等一次把所有页面加载完毕之后就没问题了
+GIFs and images load slowly in the webpage due to limited cloud server bandwidth. Once all pages are loaded, the issue will be resolved.
 
 ### v1.1.0
-更新功能：
+Feature Updates:
 
-1. 点击笔画选中，再次点击取消
-2. 写汉字时笔迹更加丝滑
-3. 识别出现错误/没有结果等会抛出错误并重回写字界面
-4. 一次渲染6张图片
-5. 在6张图片中作出选择时，选中的笔画闪烁
-6. 渲染时弹窗显示进度，没渲染完也可以点击取消渲染
-7. 开屏页单击即可启动卷轴
-8. 优化输入标签页的UI
+1. Click to select a stroke, click again to deselect.
+2. Smoother handwriting when writing Chinese characters.
+3. Errors in recognition or no results will throw errors and return to the writing interface.
+4. Render 6 images at once.
+5. Flash selected strokes in the 6 images.
+6. Progress popup displayed during rendering, allowing cancellation of rendering even if not completed.
+7. Single-click on the startup page to launch the scroll.
+8. UI optimization for the input label page.
 
-优化逻辑：
+Logic Optimization:
 
-原先每次显示svg时都使用fetch函数去取，再通过一个记录选中了哪几笔的数组变粉；现在svg文件的内容只在onload加载中取一次，取到的结果深拷贝进入三个变量，变量可以在不同phase间传递，不用再定义一个数组记录选中了哪几笔了，也减少了很多异步操作：
-* svgDoc_leave画布上显示的
-* svgDoc_send发送给AI渲染的
-* svgDoc_leave_deepcopy因为最后需要将选中的笔画删除，这个变量用来存放选中变粉、不中变灰的那个内容
+Previously, the SVG content was fetched every time it was displayed, using the fetch function to retrieve it, and then recording which strokes were selected in an array. Now, the content of the SVG file is fetched only once in the onload load, and the result is deeply copied into three variables, which can be passed between different phases without the need to define an array to record selected strokes, reducing many asynchronous operations:
+* svgDoc_leave displayed on the canvas
+* svgDoc_send sent to the AI for rendering
+* svgDoc_leave_deepcopy used to store the selected strokes, turning selected strokes pink and unselected strokes gray.
 
 
 ### v1.2.0
 
-更新功能：
-1. 加入甲骨文等古文字展位、加入说文解字等接口
-2. 点击选中6张渲染结果之一后可以返回重新选择
-3. 支持平板触摸屏使用
+Feature Updates:
+
+1. Added exhibition of ancient characters such as Oracle bone script, and added interfaces for Shuowen Jiezi.
+2. After selecting one of the 6 rendered images, you can return to reselect.
+3. Support for tablet touch screen use.
 
 
+### v1.3.0
 
-## 团队成员
+Refactor:
 
-西兰花
+1. Change the background images from PNG format to WebP format resolved the slow loading issue in the previous versions
 
-社创的兔兔
 
-大塞子SaiZi
-
-大吉
-
-bigrubber大橡皮
-
-面包脑袋
-
-Sherlock
-
-独角兽粉末
-
-W·J·H
-
-Flora
-
-疯子君
-
-simba
