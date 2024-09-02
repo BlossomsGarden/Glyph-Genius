@@ -1,0 +1,44 @@
+<svg version="1.1" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  
+  <g transform="scale(1, -1) translate(0, -900)">
+    <style type="text/css">
+        .stroke1 {fill: #808080;}
+        .stroke2 {fill: #808079;}
+        .stroke3 {fill: #808078;}
+        .stroke4 {fill: #808077;}
+        .stroke5 {fill: #808076;}
+        .stroke6 {fill: #808075;}
+        .stroke7 {fill: #808074;}
+        .stroke8 {fill: #808073;}
+        .stroke9 {fill: #808072;}
+        .stroke10 {fill: #808071;}
+        .stroke11 {fill: #808070;}
+        .stroke12 {fill: #808069;}
+        .stroke13 {fill: #808068;}
+        .stroke14 {fill: #808067;}
+        .stroke15 {fill: #808066;}
+        .stroke16 {fill: #808065;}
+        .stroke17 {fill: #808064;}
+        .stroke18 {fill: #808063;}
+        .stroke19 {fill: #808062;}
+        .stroke20 {fill: #808061;}
+        text {
+            font-family: Helvetica;
+            font-size: 50px;
+            fill: #808060;
+            paint-order: stroke;
+            stroke: #000000;
+            stroke-width: 4px;
+            stroke-linecap: butt;
+            stroke-linejoin: miter;
+            font-weight: 800;
+        }
+    </style>
+
+    <path d="M 517 600 Q 524 609 531 617 Q 573 671 610 713 Q 623 725 610 742 Q 568 784 543 784 Q 530 783 531 767 Q 530 706 483 638 L 452 597 Q 448 594 445 589 Q 405 540 356 504 Q 316 476 295 456 Q 285 441 301 444 Q 364 448 481 560 L 517 600 Z" class="stroke1"/>
+    <path d="M 537 398 Q 564 263 528 112 Q 527 109 526 105 Q 522 92 514 90 Q 490 86 426 106 Q 395 115 389 108 Q 386 102 397 90 Q 457 50 497 11 Q 516 -16 526 -15 Q 533 -16 548 -1 Q 624 119 583 416 Q 576 464 563 503 Q 547 558 522 593 Q 519 597 517 600 L 483 638 Q 435 686 374 711 Q 359 718 355 707 Q 351 692 359 672 Q 369 653 387 648 Q 411 639 452 597 L 481 560 Q 497 544 520 477 L 537 398 Z" class="stroke2"/>
+    <path d="M 438 349 Q 389 285 272 168 Q 265 158 277 155 Q 298 152 419 257 Q 479 311 537 398 C 554 423 535 503 520 477 Q 483 410 438 349 Z" class="stroke3"/>
+    
+    
+    </g>
+</svg>
