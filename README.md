@@ -144,10 +144,17 @@ Feature Updates:
 3. Support for tablet touch screen use.
 
 
-### v1.3.0
+### v1.2.1
 
 Refactor:
 
 1. Change the background images from PNG format to WebP format resolved the slow loading issue in the previous versions
 
+
+### v1.3.0
+
+Feature Updates:
+
+1. Update an English version of the webpage. Future iteration will consider a language switch between zh_CN and en.
+2. update the icon "Back"
 
