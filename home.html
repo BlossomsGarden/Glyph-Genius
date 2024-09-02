@@ -7,7 +7,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
-    <title>辞海古卷</title>
+    <title>👋 Glyph Genius</title>
     <link href="/home.css" rel="stylesheet" type="text/css" />
     <!-- ttf文件及生成的png图片存放在canvasScroll/ttf/文件夹下 -->
     <style>
@@ -40,63 +40,64 @@
 
     <span id="backWriteCSS">
         <img src="./static/icon/rewrite.svg" class="backWriteImg" onclick="backWrite()" />
-        <span class="backWriteP">重写</span>
+        <span class="backWriteP">Rewrite</span>
     </span>
     <span id="reRenderCSS">
         <img src="./static/icon/regenerate.svg" class="reRenderImg" onclick="reRender()" />
-        <span class="reRenderP">重新生成</span>
+        <span class="reRenderP">Regenerate</span>
     </span>
     <span id="backInputCSS">
         <img src="./static/icon/reinput_label.svg" class="backInputImg" onclick="backInput()" />
-        <span class="backInputP">重新输入标签</span>
+        <span class="backInputP">Reinput Prompt</span>
     </span>
     <span id="returnHomeCSS">
         <img src="./static/icon/home.svg" class="returnHomeImg" onclick="returnHome()" />
-        <span class="returnHomeP">首页</span>
+        <span class="returnHomeP">Home</span>
     </span>
     <span id="returnPreviousCSS">
         <img src="./static/icon/return_previous.svg" class="returnPreviousImg" onclick="returnPrevious()" />
-        <span class="returnPreviousP">返回</span>
+        <span class="returnPreviousP">Back</span>
     </span>
 
     <canvas width="1600" height="1200" class="myCanvas" id="canvas"></canvas>
-    <button id="clearbtn" class="bbtn" onclick="clearDraw()">清除</button>
-    <button id="selectbtn" class="bbtn" onclick="slectedOver()">选择完毕</button>
-    <button id="dwnbtn" class="bbtn" onclick="download()">下载</button>
+    <button id="clearbtn" class="bbtn" onclick="clearDraw()">Clear</button>
+    <button id="selectbtn" class="bbtn" onclick="slectedOver()">Select Over</button>
+    <button id="dwnbtn" class="bbtn" onclick="download()">Download</button>
 
     <!-- 隐藏的输入框，等待显示 -->
     <div id="container">
-        <input class="inputRenderLabelBar" type="text" placeholder="例如[丝]，可输入：飘扬的丝带" />
-        <button alt="" class="inputRenderLabelBtn" onclick="hideInput()">下一步</button>
+        <input class="inputRenderLabelBar" type="text" placeholder="e.g.[丝] - fluttering ribbons" />
+        <button alt="" class="inputRenderLabelBtn" onclick="hideInput()">Do the Magic!</button>
     </div>
     
-
+    <!-- 显示汉字信息 -->
     <div class="wrap">
         <div class="word-info">
             <div class="word-font" id="word-font"></div>
             <div class="word-bj" id="spell">
-                读音：
+                Pronunciation:
             </div>
             <div class="word-bj" id="jiegou">
-                部件组成：
+                Composition: 
             </div>
             <div class="word-hy" id="en_hanyi">
-                现代涵义：1：国都；首都。2：北京的简称。3：姓
+                Modern Meaning：1：国都；首都。2：北京的简称。3：姓
             </div>
             <div class="word-swjz" id="description">
-                《说文解字》：人所爲絕高丘也。从高省，丨 象高形。凡京之屬皆从京。 舉卿切 。
+                Explanation in "Shuowen Jiezi"：人所爲絕高丘也。从高省，丨 象高形。凡京之屬皆从京。 舉卿切 。
             </div>
         </div>
     </div>
 
-
+    <!-- 二维码展位 -->
     <div id="qrcode"></div>
 
     <!-- 隐藏的加载弹窗，等待显示 -->
     <div id="modal" class="modal hidden">
-        <p>正在渲染中，请稍后...</p>
-        <p style="padding: 0px 66px;">已渲染（<span id="count">0</span> / 6）张图片，至少渲染完一张图片后，您可点击取消渲染</p>
-        <button id="cancel" class="cancelbtn">取消</button>
+        <p>We'll generate 6 results at once, please wait...</p>
+        <p>Finished (<span id="count">0</span> / 6)</p>
+        <p>After at least one image is finished, you can click to skip the rest process.</p>
+        <button id="cancel" class="cancelbtn">skip</button>
     </div>
 
 </body>
@@ -116,7 +117,7 @@
     var userCookie = checkUserIdCookie();
 
     //设置axios请求公共头
-    axios.defaults.baseURL = 'http://139.196.197.42:9090'
+    axios.defaults.baseURL = '****://****'
     // axios.defaults.baseURL = 'http://127.0.0.1:9090'
 
     // 页面加载完成后执行操作
@@ -212,7 +213,7 @@
     function showWelcomeElement() {
         console.log("设置全屏居中欢迎页图片")
         var imageDiv = document.getElementById("image");
-        imageDiv.style.backgroundImage = "url('./static/initial.jpg')";
+        imageDiv.style.backgroundImage = "url('./static/welcome.png')";
         imageDiv.style.display = "block";
     }
 
@@ -227,7 +228,7 @@
     function checkPhase() {
         switch (phase) {
             case 1:
-                canvas.style.backgroundImage = 'url(' + "'./background/01-write.webp'" + ')';
+                canvas.style.backgroundImage = 'url(' + "'./static/background/01-write-en.png'" + ')';
                 var clearbtn = document.getElementById('clearbtn');
                 clearbtn.style.right = canvasW / 10 + 'px';
                 clearbtn.style.bottom = canvasH / 13 + 'px';
@@ -236,7 +237,6 @@
                 clearbtn.style.display = "block";
                 break;
             case 2:
-                canvas.style.backgroundImage = 'url(' + "'./background/03-select.webp'" + ')';
                 //不显示“清除”按钮
                 var clearbtn = document.getElementById('clearbtn');
                 clearbtn.style.display = "none";
@@ -252,7 +252,7 @@
                 backWriteCSS.style.display = "block"
                 break;
             case 99:
-                canvas.style.backgroundImage = 'url(' + "'./background/02-hits.webp'" + ')';
+                canvas.style.backgroundImage = 'url(' + "'./static/background/02-show-en.png'" + ')';
                 //不显示“重写”按钮
                 var backWriteCSS = document.getElementById('backWriteCSS')
                 backWriteCSS.style.display = "none"
@@ -261,7 +261,7 @@
                 // selectbtn.style.display = "none";
                 break;
             case 3:
-                canvas.style.backgroundImage = 'url(' + "'./background/04-input.webp'" + ')';
+                canvas.style.backgroundImage = 'url(' + "'./static/background/03-input-en.png'" + ')';
                 //不显示“重写”按钮
                 var backWriteCSS = document.getElementById('backWriteCSS')
                 backWriteCSS.style.display = "none"
@@ -270,7 +270,7 @@
                 selectbtn.style.display = "none";
                 break;
             case 6:
-                canvas.style.backgroundImage = 'url(' + "'./background/06-results.webp'" + ')';
+                canvas.style.backgroundImage = 'url(' + "'./static/background/06-result-en.png'" + ')';
                 //跳转后要将清空输入框的内容，把它隐藏起来
                 const inputBox = document.getElementById("container");
                 inputBox.style.display = "none"
@@ -290,7 +290,7 @@
                 returnPreviousCSS.style.display = "none";
                 break;
             case 4:
-                canvas.style.backgroundImage = 'url(' + "'./background/07-recombine.webp'" + ')';
+                canvas.style.backgroundImage = 'url(' + "'./static/background/07-recombine-en.png'" + ')';
                 //不显示加载中的modal
                 var modal = document.getElementById("modal");
                 modal.classList.add("hidden");
@@ -317,7 +317,7 @@
                 reRenderCSS.style.display = "none";
                 break;
             case 5:
-                canvas.style.backgroundImage = 'url(' + "'./background/08-save.webp'" + ')';
+                canvas.style.backgroundImage = 'url(' + "'./static/background/08-save-en.png'" + ')';
                 //不显示“重新生成”按钮
                 var reRenderCSS = document.getElementById('reRenderCSS')
                 reRenderCSS.style.display = "none";
@@ -343,7 +343,6 @@
     var drawColor = 'white'
     var lastButtonDownTime
     var timeoutId = null;
-    var chUnicode=0;    //定义变量存放识别出的手写汉字的unicode
 
     var PO = { x: 0, y: 0 };
 
@@ -516,26 +515,52 @@
         };
 
         clearDraw()
-        document.getElementById("description").innerText = "《说文解字》：" + chrctData.description;
-        var jiegouText = "部件组成：", spellText = "读音：", en_meaningText = "英文含义：";
-        var wordType = ["甲骨文", "金文大篆", "小篆", "隶书"], wordTypeDes = ["甲骨文", "金文", "小篆", "隶书"];
-        var jiegouDiv = document.getElementById("jiegou")
-        var spellDiv = document.getElementById("spell")
-        var en_hanyiDiv = document.getElementById("en_hanyi")
+        console.log(chrctData);
+
+        if(chrctData.description){
+            document.getElementById("description").innerText="Explanation in 'Shuowen Jiezi':"+chrctData.description;
+        }
+        else{
+            document.getElementById("description").innerText="";
+        }
+        var jiegouText = "Composition: ", spellText = "Pronunciation:", en_meaningText = "English Meaning:";
+        var wordType = ["甲骨文", "金文大篆", "小篆", "隶书"], wordTypeDes = ["Oracle Bone Script", "Large Seal Script", "Small Seal Script", "Clerical Script"];
+        var jiegouDiv = document.getElementById("jiegou"), spellDiv = document.getElementById("spell"), en_hanyiDiv = document.getElementById("en_hanyi");
         jiegouDiv.innerHTML = "";
-        jiegouDiv.innerText = jiegouText;
-        spellDiv.innerText = spellText + String(chrctData.spell);
-        en_hanyiDiv.innerText = en_meaningText + String(chrctData.en_meaning);
-        
+
+
+
+        // spellDiv.innerText = spellText + String(chrctData.spell);
+        if(chrctData.spell){
+            spellDiv.innerText=spellText+String(chrctData.spell);
+        }
+        else{
+            spellDiv.innerText="";
+        }
+
+        if(chrctData.en_meaning!==""){
+            en_hanyiDiv.innerText=en_meaningText + String(chrctData.en_meaning);
+        }
+        else{
+            en_hanyiDiv.innerText="";
+        }
+
+        // en_hanyiDiv.innerText = en_meaningText + String(chrctData.en_meaning);
+        console.log(chrctData.part_all);
         document.getElementById("word-font").innerHTML = "";
         var wordFontDiv = document.getElementById("word-font");
         if (wordFontDiv) {
+            const imgName = chrctData.unicode+'.png';
+            //wordType=["JiaGu","DaZhuan","XiaoZhuan","LiShu"];
             for (var i = 0; i < 4; ++i) {
                 var newDiv = document.createElement("div");
                 newDiv.className = "word-font__item";
                 var newSpan1 = document.createElement("span"), newSpan2 = document.createElement("span");
+                var srcDir='./'+wordType[i]+'/'+imgName;
+
                 newSpan1.style.fontFamily = wordType[i];
                 newSpan1.textContent = chrctData.word;
+
                 newSpan2.className = "word-font__type";
                 newSpan2.textContent = wordTypeDes[i];
                 newDiv.appendChild(newSpan1);
@@ -543,6 +568,8 @@
                 wordFontDiv.appendChild(newDiv);
             }
         }
+        if(chrctData.part_all.length>0){
+            jiegouDiv.innerText = jiegouText;
         if (chrctData.part_all == "#") {
             var newSpan = document.createElement("span");
             newSpan.innerText = "\"" + chrctData.word + "\"";
@@ -553,10 +580,10 @@
                 var newSpan = document.createElement("span");
                 newSpan.innerText = "\"" + chrctData.part_all[i] + "\"";
                 jiegouDiv.appendChild(newSpan);
+                }
             }
         }
 
-        // document.getElementById("jiegou").innerText=jiegouText;
         var oDivWrap = document.querySelector('.wrap');
         oDivWrap.style.display = 'flex';
         //oDivWrap.style.left = canvasW * 3130 / 6580 + "px";
@@ -586,100 +613,94 @@
         })
         .then(async res => {
             console.log("打印一下识别结果", res.data)
-            // 识别结果
             if (res.data.code === 512) {
-                console.log(591)
-                alert("识别到超出一个字，还请您写的紧凑些~")
+                // alert("识别到超出一个字，还请您写的紧凑些~")
+                alert("Detected more than one character. Please write only one character.")
                 backWrite()
             }
             else if (res.data.code === 511) {
-                console.log(595)
-                alert("无法正确识别，还请您重新书写~")
+                // alert("无法正确识别，还请您重新书写~")
+                alert("Unable to recognize correctly. Please rewrite it for me.")
                 backWrite()
             }
             else {
-                console.log(599)
                 clearDraw()
-                chUnicode=res.data.unicode
+
+                //请求文字信息
+                await axios({
+                    method: 'GET',
+                        url: 'https://x-chinese-api.ykt.eduyun.cn/v1/chinese/definitions?word=' + String(res.data.ch),
+                })
+                .then(res2 => {
+                    console.log("请求文字信息1", res2.data)
+                    wordInfo1 = res2.data
+                })
+                .catch(error2 => {
+                    console.log("请求文字信息1错误", error2.message)
+                });
+
+                await axios({
+                    method: 'GET',
+                        url: 'https://x-chinese-api.ykt.eduyun.cn/v1/chinese/words?word=' + String(encodeURI(res.data.ch)),
+
+                })
+                .then(res3 => {
+                    console.log("请求文字信息2", res3.data)
+                    wordInfo2 = res3.data
+                })
+                .catch(error3 => {
+                    console.log("请求文字信息2错误", error3.message)
+                });
+
+
+                await axios({
+                    method: 'POST',
+                    url: '/meaning',
+                    data: {
+                        "url": "https://ctext.org/dictionary.pl",
+                            "word": res.data.ch,
+                    }
+                })
+                .then(res4 => {
+                    if (res4.data.success) {
+                        console.log("请求文字信息3", res4.data.meaning)
+                        wordInfo3 = res4.data.meaning
+                    }
+                    else {
+                        console.log("请求api错误", res4.data.message)
+                    }
+
+                })
+                .catch(error4 => {
+                    console.log("请求meaning错误", error4.message)
+                })
+
+                var part_all = wordInfo2.jiegou.part_all, partList = new Array();
+                for (var i = 0; i < part_all.length; ++i) {
+                    partList.push(part_all[i]);
+                }
+
+                console.log("wordInfo3", wordInfo3)
+
+                var showInfo = {
+                    "word": res.data.ch,
+                    "unicode": res.data.unicode,
+                    "description": wordInfo1.description,
+                    "spell": wordInfo1.spell,
+                    "part_all": partList,
+                    "en_meaning": wordInfo3,
+
+                }
+
                 await showOnload(res.data.unicode, res.data.ch);
+                await showMeaningOnload(showInfo);
             }
         })
         .catch(err => {
             console.log("发生错误",err)
-            // alert('网络错误');
+            alert('网络错误');
+            backWrite();
         });
-
-        console.log("你还执行到了这里？")
-
-        //请求文字信息
-        await axios({
-            method: 'GET',
-            url: 'https://x-chinese-api.ykt.eduyun.cn/v1/chinese/definitions?word=' + String.fromCharCode(chUnicode),
-        })
-        .then(res2 => {
-            console.log("请求文字信息1", res2.data)
-            wordInfo1 = res2.data
-        })
-        .catch(error2 => {
-            console.log("请求文字信息1错误", error2.message)
-        });
-
-        await axios({
-            method: 'GET',
-            url: 'https://x-chinese-api.ykt.eduyun.cn/v1/chinese/words?word=' + (String.fromCharCode(29233)),
-
-        })
-        .then(res3 => {
-            console.log("请求文字信息2", res3.data)
-            wordInfo2 = res3.data
-        })
-        .catch(error3 => {
-            console.log("请求文字信息2错误", error3.message)
-        });
-
-        await axios({
-            method: 'POST',
-            url: '/meaning',
-            data: {
-                "url": "https://ctext.org/dictionary.pl",
-                "word": String.fromCharCode(29233),
-            }
-        })
-        .then(res4 => {
-            if (res4.data.success) {
-                console.log("请求文字信息3", res4.data.meaning)
-                wordInfo3 = res4.data.meaning
-            }
-            else {
-                console.log("请求api错误", res4.data.message)
-            }
-
-        })
-        .catch(error4 => {
-            console.log("请求meaning错误", error4.message)
-        })
-
-        console.log(650)
-
-        var part_all = wordInfo2.jiegou.part_all, partList = new Array();
-        for (var i = 0; i < part_all.length; ++i) {
-            partList.push(part_all[i]);
-        }
-
-        console.log("wordInfo3", wordInfo3)
-
-        var showInfo = {
-            "word": String.fromCharCode(chUnicode),
-            "unicode": chUnicode,
-            "description": wordInfo1.description,
-            "spell": wordInfo1.spell,
-            "part_all": partList,
-            "en_meaning": wordInfo3,
-
-        }
-
-        await showMeaningOnload(showInfo);
-
     }
 </script>
 
@@ -823,7 +844,9 @@
                             // throw new Error('Network response was not ok');
                             //因为这个OCR还挺有意思，写个字母a,他真的给你返回unicode是97
                             console.log('其实是字库里没有那个unicode，但对用户不能这样说', response)
-                            alert("您输入的是「" + ch + "」吗？恭喜您发现了系统的边界，请尝试输入其他汉字，我们的系统也将继续完善")
+                            // alert("您输入的是「" + ch + "」吗？恭喜您发现了系统的边界，请尝试输入其他汉字，我们的系统也将继续完善")
+                            alert("Is「" + ch + "」your input? Congratulations on discovering the system's limitation! Please try entering other Chinese characters, and our system will continue to improve.")
+
                             backWrite()
                             reject("在初始化svg的函数里被抛出")
                         }
@@ -859,7 +882,8 @@
             catch (error) {
                 //因为这个OCR还挺有意思，写个字母a,他真的给你返回unicode是97
                 console.log('其实是字库里没有那个unicode，但对用户不能这样说', error)
-                alert("无法正确识别，还请您重新书写~")
+                // alert("无法正确识别，还请您重新书写~")
+                alert("Unable to recognize correctly. Please rewrite it for me ~")
                 backWrite()
             }
 
@@ -973,7 +997,7 @@
         img.onload = () => {
             const ctx = canvas.getContext('2d');
             ctx.clearRect(canvas.width / 2, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, canvasW / 1404 * 890 - imgW / 2, canvasH / 1080 * 513 - imgH / 2, imgW*1.5, imgH*1.5);
+            ctx.drawImage(img, canvasW / 1404 * 840 - imgW / 2, canvasH / 1080 * 440 - imgH / 2, imgW*1.5, imgH*1.5);
         }
     }
 
@@ -1056,7 +1080,6 @@
             }
         })
             .then(res => {
-                // console.log("翻译接口返回", res)
                 inputEng = res.data.translation
             })
             .catch(error => {
@@ -1259,7 +1282,7 @@
                 img1H = canvasH * 170 / 1100
                 img1W = canvasH * 170 / 1100
                 //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
-                ctx.drawImage(img1, canvasW / 1404 * 385 - img1W / 2, canvasH / 3752 * 1070 * scaling - img1H / 2, img1W, img1H);
+                ctx.drawImage(img1, canvasW / 1404 * 405 - img1W / 2, canvasH / 3752 * 1140 * scaling - img1H / 2, img1W, img1H);
             }
         }
         if (sucnum >= 2) {
@@ -1267,7 +1290,7 @@
             img2.src = data[1].base64;
             img2.onload = function () {
                 //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
-                ctx.drawImage(img2, canvasW / 1404 * 542 - img1W / 2, canvasH / 3752 * 1070 * scaling - img1H / 2, img1W, img1H);
+                ctx.drawImage(img2, canvasW / 1404 * 565 - img1W / 2, canvasH / 3752 * 1140 * scaling - img1H / 2, img1W, img1H);
             }
         }
         if (sucnum >= 3) {
@@ -1275,7 +1298,7 @@
             img3.src = data[2].base64;
             img3.onload = function () {
                 //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
-                ctx.drawImage(img3, canvasW / 1404 * 385 - img1W / 2, canvasH / 2.03 - img1H / 2, img1W, img1H);
+                ctx.drawImage(img3, canvasW / 1404 * 405 - img1W / 2, canvasH / 2.03 - img1H / 2, img1W, img1H);
             }
         }
         if (sucnum >= 4) {
@@ -1283,7 +1306,7 @@
             img4.src = data[3].base64;
             img4.onload = function () {
                 //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
-                ctx.drawImage(img4, canvasW / 1404 * 542 - img1W / 2, canvasH / 2.03 - img1H / 2, img1W, img1H);
+                ctx.drawImage(img4, canvasW / 1404 * 565 - img1W / 2, canvasH / 2.03 - img1H / 2, img1W, img1H);
             }
         }
         if (sucnum >= 5) {
@@ -1291,7 +1314,7 @@
             img5.src = data[4].base64;
             img5.onload = function () {
                 //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
-                ctx.drawImage(img5, canvasW / 1404 * 385 - img1W / 2, canvasH / 2.03 * 2 - canvasH / 3752 * 1070 * scaling - img1H / 2, img1W, img1H);
+                ctx.drawImage(img5, canvasW / 1404 * 405 - img1W / 2, canvasH / 2.03 * 2 - canvasH / 3752 * 1140 * scaling - img1H / 2, img1W, img1H);
             }
         }
         if (sucnum >= 6) {
@@ -1299,7 +1322,7 @@
             img6.src = data[5].base64;
             img6.onload = function () {
                 //画图片，因为原点在图片的中心点，所以每次画图只需要从图片的负一半坐标开始画，就能看到我们想要的效果
-                ctx.drawImage(img6, canvasW / 1404 * 542 - img1W / 2, canvasH / 2.03 * 2 - canvasH / 3752 * 1070 * scaling - img1H / 2, img1W, img1H);
+                ctx.drawImage(img6, canvasW / 1404 * 565 - img1W / 2, canvasH / 2.03 * 2 - canvasH / 3752 * 1140 * scaling - img1H / 2, img1W, img1H);
             }
         }
         
@@ -1307,22 +1330,22 @@
         //鼠标选中图片
         clickImg = function (x, y) {
             //找到图片的最小值和最大值，因为画图是从-imgW / 2开始的，那么这就是图片占据的位置的最小值，最大值是imgW / 2,y轴同理
-            if (canvasW / 1404 * 385 - img1W / 2 < x && x < canvasW / 1404 * 385 + img1W / 2 && canvasH / 3752 * 1070 * scaling - img1H / 2 < y && y < canvasH / 3752 * 1070 * scaling + img1H / 2 && sucnum >= 1) {
+            if (canvasW / 1404 * 405 - img1W / 2 < x && x < canvasW / 1404 * 425 + img1W / 2 && canvasH / 3752 * 1140 * scaling - img1H / 2 < y && y < canvasH / 3752 * 1140 * scaling + img1H / 2 && sucnum >= 1) {
                 return 1
             }
-            else if (canvasW / 1404 * 542 - img1W / 2 < x && x < canvasW / 1404 * 542 + img1W / 2 && canvasH / 3752 * 1070 * scaling - img1H / 2 < y && y < canvasH / 3752 * 1070 * scaling + img1H / 2 && sucnum >= 2) {
+            else if (canvasW / 1404 * 565 - img1W / 2 < x && x < canvasW / 1404 * 585 + img1W / 2 && canvasH / 3752 * 1140 * scaling - img1H / 2 < y && y < canvasH / 3752 * 1140 * scaling + img1H / 2 && sucnum >= 2) {
                 return 2
             }
-            else if (canvasW / 1404 * 385 - img1W / 2 < x && x < canvasW / 1404 * 385 + img1W / 2 && canvasH / 2.03 - img1H / 2 < y && y < canvasH / 2.03 + img1H / 2 && sucnum >= 3) {
+            else if (canvasW / 1404 * 405 - img1W / 2 < x && x < canvasW / 1404 * 425 + img1W / 2 && canvasH / 2.03 - img1H / 2 < y && y < canvasH / 2.03 + img1H / 2 && sucnum >= 3) {
                 return 3
             }
-            else if (canvasW / 1404 * 542 - img1W / 2 < x && x < canvasW / 1404 * 542 + img1W / 2 && canvasH / 2.03 - img1H / 2 < y && y < canvasH / 2.03 + img1H / 2 && sucnum >= 4) {
+            else if (canvasW / 1404 * 565 - img1W / 2 < x && x < canvasW / 1404 * 585 + img1W / 2 && canvasH / 2.03 - img1H / 2 < y && y < canvasH / 2.03 + img1H / 2 && sucnum >= 4) {
                 return 4
             }
-            else if (canvasW / 1404 * 385 - img1W / 2 < x && x < canvasW / 1404 * 385 + img1W / 2 && canvasH / 2.03 * 2 - canvasH / 3752 * 1070 * scaling - img1H / 2 < y && y < canvasH / 2.03 * 2 - canvasH / 3752 * 1070 * scaling + img1H / 2 && sucnum >= 5) {
+            else if (canvasW / 1404 * 405 - img1W / 2 < x && x < canvasW / 1404 * 425 + img1W / 2 && canvasH / 2.03 * 2 - canvasH / 3752 * 1140 * scaling - img1H / 2 < y && y < canvasH / 2.03 * 2 - canvasH / 3752 * 1140 * scaling + img1H / 2 && sucnum >= 5) {
                 return 5
             }
-            else if (canvasW / 1404 * 542 - img1W / 2 < x && x < canvasW / 1404 * 542 + img1W / 2 && canvasH / 2.03 * 2 - canvasH / 3752 * 1070 * scaling - img1H / 2 < y && y < canvasH / 2.03 * 2 - canvasH / 3752 * 1070 * scaling + img1H / 2 && sucnum >= 6) {
+            else if (canvasW / 1404 * 565 - img1W / 2 < x && x < canvasW / 1404 * 585 + img1W / 2 && canvasH / 2.03 * 2 - canvasH / 3752 * 1140 * scaling - img1H / 2 < y && y < canvasH / 2.03 * 2 - canvasH / 3752 * 1140 * scaling + img1H / 2 && sucnum >= 6) {
                 return 6
             }
             else {
@@ -1603,7 +1626,6 @@
         
         //鼠标点击+鼠标移动
         canvas.onmousedown = async function (e) {
-            // console.log("鼠标按下")
             //e.offsetX是鼠标点击到canvas边的位置
             lastX = e.offsetX;
             lastY = e.offsetY;
@@ -1618,7 +1640,6 @@
                 var y = e.offsetY;
 
                 if (canMove) {
-                    // console.log("鼠标移动开始画了")
                     //算出来移动的像素（每次都是减去上次的值）
                     var Mx = x - lastX;
                     var My = y - lastY;
@@ -1785,7 +1806,6 @@
 
         //上传阿里云
         var url = ''
-        console.log("检查此时的base64Image", base64Image)
         await axios({
             method: 'POST',
             url: '/upload',

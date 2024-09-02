@@ -51,7 +51,7 @@ html {
     border-radius: 3px;
     height: 56px;
     width: 100px;
-    font-size: 28px;
+    font-size: 20px;
     font-weight: 600;
     color: white;
     margin-left: -115px;
@@ -258,7 +258,7 @@ p {
     /* 距离左边 50% */
     transform: translate(-50%, -50%);
     /* 偏移 -50% ，使其居中 */
-    width: 500px;
+    width: 521px;
     /* 宽度为 300px */
     height: 350px;
     /* 高度为 200px */
@@ -266,7 +266,7 @@ p {
     /* 背景颜色为白色 */
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     /* 添加阴影效果 */
-    border-radius: 10px;
+    border-radius: 25px;
 
     display: flex;
     /* 使用 flex 布局 */
@@ -319,8 +319,8 @@ p {
 .wrap {
     width: 68vw;
     position: absolute;
-    left: 48vw;
-    top: 16vw;
+    left: 46vw;
+    top: 14vw;
     display: flex;
     color: #fff;
     display: none;
@@ -378,7 +378,7 @@ p {
     /* position: absolute;
     top:  */
     font-size: 2.5vw;
-    margin-bottom: 1.2rem;
+    margin-bottom: 0.9rem;
 }
 
 .word-font__item {
@@ -390,24 +390,24 @@ p {
 
 .word-font__type {
     font-size: 1.8rem;
-    white-space: nowrap;
+    text-align: center;
 }
 
 .word-hy {
-    margin-bottom: 1.2rem;
-    font-size: 2.5rem;
+    margin-bottom: 0.9rem;
+    font-size: 1.6rem;
 }
 
 .word-bj {
-    margin-bottom: 1.2rem;
-    font-size: 2.5rem;
+    margin-bottom: 0.9rem;
+    font-size: 1.6rem;
     
 }
 
 .word-swjz {
     word-break:normal; 
-    margin-bottom: 1.2rem;
-    font-size: 2.5rem;
+    margin-bottom: 0.9rem;
+    font-size: 1.6rem;
 }
 
 .word-bj span {

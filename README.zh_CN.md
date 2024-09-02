@@ -5,7 +5,7 @@
 
 ## 简介
 
-本项目是2023年因创新项目结识组成的团队 “智慧珠珠队” 的核心IP（个人比较喜欢卷济神经网络这个名字）。有幸作为开发者之一参与该项目从idea到初步落地的全流程，做此纪念。当前项目网址：[https://scroll.ihanzi.net/](https://scroll.ihanzi.net/release.html)
+本项目是2023年因创新项目结识组成的团队 “智慧珠珠队” 的核心IP（个人比较喜欢卷济神经网络这个名字）。有幸作为开发者之一参与该项目从idea到初步落地的全流程，做此纪念。当前项目网址：[https://scroll.ihanzi.net/](https://scroll.ihanzi.net/release-en.html)
 
 
 

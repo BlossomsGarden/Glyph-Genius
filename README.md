@@ -6,7 +6,7 @@
 
 ## Intro
 
-This project is the core IP of the team "Wisdom Bead Team", formed in 2023 due to an innovative project. I had the privilege of being one of the developers involved in the entire process of the project from idea to initial implementation. The current project website: [https://scroll.ihanzi.net/](https://scroll.ihanzi.net/release.html)
+This project is the core IP of the team "Wisdom Bead Team", formed in 2023 due to an innovative project. I had the privilege of being one of the developers involved in the entire process of the project from idea to initial implementation. The current project website: [https://scroll.ihanzi.net/](https://scroll.ihanzi.net/release-en.html)
 
 
 
